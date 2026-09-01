@@ -9,9 +9,9 @@ export default function PhotoUpload({ value, onChange }) {
   const [error, setError] = useState("");
 
   async function handleFileChange(e) {
-    const files = e.target.files;
+    const files = Array.from(e.target.files || []);
     e.target.value = ""; // permite volver a elegir los mismos archivos si hace falta
-    if (!files || files.length === 0) return;
+    if (files.length === 0) return;
     setUploading(true);
     setError("");
     try {
