@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { PackagePlus, X, Plus, Save, Pencil, Trash2, LogOut } from "lucide-react";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
+import PhotoUpload from "./PhotoUpload.jsx";
 import { MARCAS } from "./data.js";
 import { formatMoney } from "./format.js";
 import { insertMoto, updateMotoById, deleteMotoById } from "./motosApi.js";
@@ -158,7 +159,7 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
                 options={[{ value: "NINGUNO", label: "Ninguna" }, { value: "0KM", label: "0KM" }, { value: "RESERVADA", label: "Reservada" }]}
               />
             </div>
-            <TextInput label="URL de foto (opcional)" value={form.image_url} onChange={set("image_url")} placeholder="https://..." />
+            <PhotoUpload value={form.image_url} onChange={(url) => setForm((f) => ({ ...f, image_url: url }))} />
             {error && <p className="text-sm text-[#C1440E]">{error}</p>}
             <div className="flex items-center gap-3">
               <button

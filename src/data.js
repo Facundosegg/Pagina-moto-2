@@ -18,7 +18,7 @@
 // CONFIG — Datos de contacto y del negocio.
 // ------------------------------------------------------------------------------
 export const CONFIG = {
-  businessName: "mauricio",
+  businessName: "RUTA NEA MOTOS",
   tagline: "Motos 0km y usadas en el Nordeste",
   whatsappNumber: "5493625000000", // Código de país (54) + 9 + código de área + número, SIN + ni espacios
   phoneDisplay: "362 500 0000",

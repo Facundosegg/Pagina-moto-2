@@ -107,6 +107,44 @@ el catálogo (así funciona el sitio para tus clientes), pero solo alguien
    perfecto — solo que un visitante que ya tenía la página abierta ve la
    moto nueva recién si refresca.
 
+### Paso 2.1 — Creá el espacio para las fotos
+
+Esto es lo que te permite subir fotos tocando un botón, en vez de tener
+que buscar el link en otra página.
+
+1. En el menú de la izquierda, andá a **Storage**.
+2. Tocá **New bucket**.
+3. Nombre: escribí exactamente `motos` (así, en minúscula).
+4. Activá el switch **Public bucket** (importante: si no lo activás,
+   las fotos no se van a poder ver en el sitio).
+5. Tocá **Create bucket**.
+6. Andá de nuevo a **SQL Editor → New query**, pegá esto y tocá **Run**:
+
+```sql
+create policy "Cualquiera puede ver las fotos"
+on storage.objects for select
+using ( bucket_id = 'motos' );
+
+create policy "Solo admins logueados pueden subir fotos"
+on storage.objects for insert
+to authenticated
+with check ( bucket_id = 'motos' );
+
+create policy "Solo admins logueados pueden reemplazar fotos"
+on storage.objects for update
+to authenticated
+using ( bucket_id = 'motos' );
+
+create policy "Solo admins logueados pueden borrar fotos"
+on storage.objects for delete
+to authenticated
+using ( bucket_id = 'motos' );
+```
+
+Mismo criterio que con la tabla: cualquiera puede ver las fotos (para
+que se vean en el catálogo), pero solo un administrador logueado puede
+subir, reemplazar o borrar.
+
 ### Paso 3 — Creá tu usuario de administrador
 
 1. Andá a **Authentication → Users**.
