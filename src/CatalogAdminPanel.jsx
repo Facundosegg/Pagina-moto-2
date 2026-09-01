@@ -18,7 +18,7 @@ function blankMotoForm() {
     precio: "",
     moneda: "ARS",
     destacado: "NINGUNO",
-    image_url: "",
+    fotos: [],
   };
 }
 
@@ -43,7 +43,7 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
       precio: String(moto.precio ?? ""),
       moneda: moto.moneda,
       destacado: moto.destacado ?? "NINGUNO",
-      image_url: moto.image_url ?? "",
+      fotos: moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [],
     });
     setError("");
   }
@@ -73,7 +73,8 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
       precio: Number(form.precio),
       moneda: form.moneda,
       destacado: form.destacado === "NINGUNO" ? null : form.destacado,
-      image_url: form.image_url.trim(),
+      fotos: form.fotos,
+      image_url: form.fotos[0] || "",
     };
   }
 
@@ -159,7 +160,7 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
                 options={[{ value: "NINGUNO", label: "Ninguna" }, { value: "0KM", label: "0KM" }, { value: "RESERVADA", label: "Reservada" }]}
               />
             </div>
-            <PhotoUpload value={form.image_url} onChange={(url) => setForm((f) => ({ ...f, image_url: url }))} />
+            <PhotoUpload value={form.fotos} onChange={(fotos) => setForm((f) => ({ ...f, fotos }))} />
             {error && <p className="text-sm text-[#C1440E]">{error}</p>}
             <div className="flex items-center gap-3">
               <button

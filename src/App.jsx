@@ -50,21 +50,51 @@ function PlaceholderArt({ marca, estado }) {
 }
 
 function MotoCard({ moto }) {
+  const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
+  const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
   const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
+
+  function go(delta) {
+    setImgError(false);
+    setIndex((i) => (i + delta + fotos.length) % fotos.length);
+  }
 
   return (
     <div className="group bg-[#F4F0E6] border border-[#D8D2C0] flex flex-col">
       <div className="relative">
-        {moto.image_url && !imgError ? (
+        {fotos.length > 0 && !imgError ? (
           <img
-            src={moto.image_url}
+            src={fotos[index]}
             alt={`${moto.marca} ${moto.modelo}`}
             className="w-full h-44 object-cover"
             onError={() => setImgError(true)}
           />
         ) : (
           <PlaceholderArt marca={moto.marca} estado={moto.estado} />
+        )}
+        {fotos.length > 1 && !imgError && (
+          <>
+            <button
+              onClick={() => go(-1)}
+              aria-label="Foto anterior"
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white w-6 h-6 flex items-center justify-center text-sm"
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => go(1)}
+              aria-label="Foto siguiente"
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white w-6 h-6 flex items-center justify-center text-sm"
+            >
+              ›
+            </button>
+            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+              {fotos.map((_, i) => (
+                <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === index ? "bg-[#F5B700]" : "bg-white/60"}`} />
+              ))}
+            </div>
+          </>
         )}
         {moto.destacado && (
           <span

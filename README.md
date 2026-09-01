@@ -72,6 +72,7 @@ create table motos (
   moneda text not null default 'ARS',
   destacado text,
   image_url text,
+  fotos text[] not null default '{}',
   created_at timestamptz not null default now()
 );
 
@@ -106,6 +107,18 @@ el catálogo (así funciona el sitio para tus clientes), pero solo alguien
    `motos` y activá el switch. Si no lo activás, el sitio igual funciona
    perfecto — solo que un visitante que ya tenía la página abierta ve la
    moto nueva recién si refresca.
+
+**Si ya habías creado la tabla `motos` antes** (sin la columna
+`fotos`), no hace falta borrar nada: andá de nuevo a **SQL Editor →
+New query**, pegá esto y tocá **Run** para agregarla:
+
+```sql
+alter table motos add column if not exists fotos text[] not null default '{}';
+```
+
+Las motos que ya tenías cargadas con una sola foto (columna
+`image_url`) se siguen viendo bien — el sitio las muestra igual, y si
+las editás y agregás fotos nuevas, pasan a usar la galería.
 
 ### Paso 2.1 — Creá el espacio para las fotos
 

@@ -25,3 +25,12 @@ export async function uploadMotoImage(file) {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+// Sube varias fotos a la vez. Si alguna falla, las demás igual se suben
+// y se avisa cuáles no se pudieron subir.
+export async function uploadMotoImages(files) {
+  const results = await Promise.allSettled(Array.from(files).map(uploadMotoImage));
+  const urls = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+  const failed = results.filter((r) => r.status === "rejected").length;
+  return { urls, failed };
+}
