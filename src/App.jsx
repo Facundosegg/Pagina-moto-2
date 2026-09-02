@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Bike, MapPin, Clock, Instagram, Facebook, MessageCircle, X, Search, PackagePlus, ShieldCheck } from "lucide-react";
-import { CONFIG, MARCAS } from "./data.js";
+import { DEFAULT_CONFIG, MARCAS } from "./data.js";
 import { formatMoney, waLink } from "./format.js";
 import { fetchMotos, subscribeToMotos } from "./motosApi.js";
+import { fetchClienteActual, applyTheme } from "./clienteApi.js";
 import { isSupabaseConfigured } from "./supabaseClient.js";
 import { useAdminSession } from "./useAdminSession.js";
 import FieldSelect from "./FieldSelect.jsx";
@@ -10,6 +11,7 @@ import TextInput from "./TextInput.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import CatalogAdminPanel from "./CatalogAdminPanel.jsx";
 import SupabaseNotConfiguredNotice from "./SupabaseNotConfiguredNotice.jsx";
+import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
 
 const PAGE_SIZE = 8;
 
@@ -22,7 +24,7 @@ function RoadDivider() {
         className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px]"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(90deg, #F5B700 0, #F5B700 28px, transparent 28px, transparent 52px)",
+            "repeating-linear-gradient(90deg, var(--c-signal) 0, var(--c-signal) 28px, transparent 28px, transparent 52px)",
         }}
       />
     </div>
@@ -36,12 +38,12 @@ function PlaceholderArt({ marca, estado }) {
         className="absolute inset-0 opacity-[0.08]"
         style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0, #fff 1px, transparent 1px, transparent 14px)" }}
       />
-      <Bike className="w-16 h-16 text-[#F5B700]" strokeWidth={1.25} />
+      <Bike className="w-16 h-16 text-[var(--c-signal)]" strokeWidth={1.25} />
       <span className="absolute bottom-2 right-3 font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">
         {marca}
       </span>
       {estado === "0km" && (
-        <span className="absolute top-2 left-2 font-mono text-[10px] tracking-widest bg-[#F5B700] text-[#15151A] px-2 py-0.5">
+        <span className="absolute top-2 left-2 font-mono text-[10px] tracking-widest bg-[var(--c-signal)] text-[var(--c-dark)] px-2 py-0.5">
           0KM
         </span>
       )}
@@ -49,7 +51,7 @@ function PlaceholderArt({ marca, estado }) {
   );
 }
 
-function MotoCard({ moto }) {
+function MotoCard({ moto, whatsappNumber }) {
   const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
@@ -61,7 +63,7 @@ function MotoCard({ moto }) {
   }
 
   return (
-    <div className="group bg-[#F4F0E6] border border-[#D8D2C0] flex flex-col">
+    <div className="group bg-[var(--c-paper2)] border border-[#D8D2C0] flex flex-col">
       <div className="relative">
         {fotos.length > 0 && !imgError ? (
           <img
@@ -91,7 +93,7 @@ function MotoCard({ moto }) {
             </button>
             <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
               {fotos.map((_, i) => (
-                <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === index ? "bg-[#F5B700]" : "bg-white/60"}`} />
+                <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === index ? "bg-[var(--c-signal)]" : "bg-white/60"}`} />
               ))}
             </div>
           </>
@@ -99,7 +101,7 @@ function MotoCard({ moto }) {
         {moto.destacado && (
           <span
             className={`absolute top-2 left-2 font-mono text-[10px] tracking-widest px-2 py-0.5 ${
-              moto.destacado === "RESERVADA" ? "bg-[#C1440E] text-[#F4F0E6]" : "bg-[#F5B700] text-[#15151A]"
+              moto.destacado === "RESERVADA" ? "bg-[var(--c-rust)] text-[var(--c-paper2)]" : "bg-[var(--c-signal)] text-[var(--c-dark)]"
             }`}
           >
             {moto.destacado}
@@ -110,35 +112,35 @@ function MotoCard({ moto }) {
       <div className="p-4 flex flex-col gap-3 flex-1">
         <div>
           <p className="font-mono text-[11px] tracking-widest text-[#8B8D8F] uppercase">{moto.marca}</p>
-          <h3 className="font-display text-xl uppercase tracking-wide text-[#17171C] leading-tight">{moto.modelo}</h3>
+          <h3 className="font-display text-xl uppercase tracking-wide text-[var(--c-ink)] leading-tight">{moto.modelo}</h3>
         </div>
 
         <div className="grid grid-cols-3 gap-px bg-[#D8D2C0] font-mono text-center">
-          <div className="bg-[#EDE8DC] py-1.5">
+          <div className="bg-[var(--c-paper)] py-1.5">
             <div className="text-[9px] text-[#8B8D8F] tracking-widest">AÑO</div>
-            <div className="text-sm text-[#17171C] tabular-nums">{moto.anio || "S/D"}</div>
+            <div className="text-sm text-[var(--c-ink)] tabular-nums">{moto.anio || "S/D"}</div>
           </div>
-          <div className="bg-[#EDE8DC] py-1.5">
+          <div className="bg-[var(--c-paper)] py-1.5">
             <div className="text-[9px] text-[#8B8D8F] tracking-widest">CC</div>
-            <div className="text-sm text-[#17171C] tabular-nums">{moto.cc}</div>
+            <div className="text-sm text-[var(--c-ink)] tabular-nums">{moto.cc}</div>
           </div>
-          <div className="bg-[#EDE8DC] py-1.5">
+          <div className="bg-[var(--c-paper)] py-1.5">
             <div className="text-[9px] text-[#8B8D8F] tracking-widest">KM</div>
-            <div className="text-sm text-[#17171C] tabular-nums">
+            <div className="text-sm text-[var(--c-ink)] tabular-nums">
               {moto.estado === "0km" ? "0" : new Intl.NumberFormat("es-AR").format(moto.km)}
             </div>
           </div>
         </div>
 
         <div className="mt-auto flex items-end justify-between pt-1">
-          <div className="bg-[#15151A] text-[#F5B700] font-mono text-lg px-3 py-1.5 tabular-nums">
+          <div className="bg-[var(--c-dark)] text-[var(--c-signal)] font-mono text-lg px-3 py-1.5 tabular-nums">
             {formatMoney(moto.precio, moto.moneda)}
           </div>
           <a
-            href={waLink(CONFIG.whatsappNumber, msg)}
+            href={waLink(whatsappNumber, msg)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 bg-[#17171C] text-[#F4F0E6] text-sm px-3 py-2 hover:bg-[#C1440E] transition-colors"
+            className="inline-flex items-center gap-1.5 bg-[var(--c-ink)] text-[var(--c-paper2)] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Consultar
           </a>
@@ -148,7 +150,7 @@ function MotoCard({ moto }) {
   );
 }
 
-function PedirMotoForm() {
+function PedirMotoForm({ whatsappNumber }) {
   const [form, setForm] = useState({ nombre: "", whatsapp: "", email: "", marca: "Cualquiera", modelo: "", presupuesto: "", comentario: "" });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const canSubmit = form.nombre.trim() && form.whatsapp.trim();
@@ -166,13 +168,13 @@ function PedirMotoForm() {
       form.presupuesto && `Presupuesto aprox: ${form.presupuesto}`,
       form.comentario && `Comentario: ${form.comentario}`,
     ].filter(Boolean);
-    window.open(waLink(CONFIG.whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
+    window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-[#1B1B20] border border-[#3A3A42] p-6 flex flex-col gap-4">
       <div>
-        <h3 className="font-display text-2xl uppercase tracking-wide text-[#F4F0E6]">Pedí tu moto</h3>
+        <h3 className="font-display text-2xl uppercase tracking-wide text-[var(--c-paper2)]">Pedí tu moto</h3>
         <p className="text-sm text-[#B9B6AC] mt-1">
           Contanos qué moto querés y te avisamos por WhatsApp apenas entre. Sin registrarte.
         </p>
@@ -196,14 +198,14 @@ function PedirMotoForm() {
           value={form.comentario}
           onChange={(e) => set("comentario")(e.target.value)}
           rows={2}
-          className="bg-[#F4F0E6] border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E] resize-none"
+          className="bg-[var(--c-paper2)] border border-[#D8D2C0] text-[var(--c-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--c-rust)] resize-none"
         />
       </label>
       <p className="text-xs text-[#8B8D8F]">Usamos tus datos solo para responder esta búsqueda.</p>
       <button
         type="submit"
         disabled={!canSubmit}
-        className="self-start inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#F4F0E6] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="self-start inline-flex items-center gap-2 bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-paper2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <MessageCircle className="w-4 h-4" /> Avisame cuando llegue
       </button>
@@ -211,7 +213,7 @@ function PedirMotoForm() {
   );
 }
 
-function VenderMotoForm() {
+function VenderMotoForm({ whatsappNumber }) {
   const [form, setForm] = useState({ nombre: "", whatsapp: "", email: "", marca: "APRILIA", modelo: "", anio: "", km: "", comentario: "" });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const canSubmit = form.nombre.trim() && form.whatsapp.trim() && form.modelo.trim();
@@ -230,13 +232,13 @@ function VenderMotoForm() {
       form.km && `Km: ${form.km}`,
       form.comentario && `Estado / comentarios: ${form.comentario}`,
     ].filter(Boolean);
-    window.open(waLink(CONFIG.whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
+    window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#F4F0E6] border border-[#D8D2C0] p-6 flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="bg-[var(--c-paper2)] border border-[#D8D2C0] p-6 flex flex-col gap-4">
       <div>
-        <h3 className="font-display text-2xl uppercase tracking-wide text-[#17171C]">Vendé o permutá tu moto</h3>
+        <h3 className="font-display text-2xl uppercase tracking-wide text-[var(--c-ink)]">Vendé o permutá tu moto</h3>
         <p className="text-sm text-[#5B5852] mt-1">
           Te la compramos, o la entregás en parte de pago por una del catálogo. Coordinamos por WhatsApp.
         </p>
@@ -255,14 +257,14 @@ function VenderMotoForm() {
           value={form.comentario}
           onChange={(e) => set("comentario")(e.target.value)}
           rows={2}
-          className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E] resize-none"
+          className="bg-white border border-[#D8D2C0] text-[var(--c-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--c-rust)] resize-none"
         />
       </label>
       <p className="text-xs text-[#8B8D8F]">La evaluación se coordina por WhatsApp, sin compromiso.</p>
       <button
         type="submit"
         disabled={!canSubmit}
-        className="self-start inline-flex items-center gap-2 bg-[#17171C] text-[#F4F0E6] font-medium px-5 py-2.5 hover:bg-[#C1440E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="self-start inline-flex items-center gap-2 bg-[var(--c-ink)] text-[var(--c-paper2)] font-medium px-5 py-2.5 hover:bg-[var(--c-rust)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <MessageCircle className="w-4 h-4" /> Solicitar evaluación
       </button>
@@ -276,6 +278,9 @@ export default function App() {
   const [visibles, setVisibles] = useState(PAGE_SIZE);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const [cliente, setCliente] = useState(null);
+  const [clienteLoading, setClienteLoading] = useState(true);
+
   const [motos, setMotos] = useState([]);
   const [motosLoading, setMotosLoading] = useState(true);
 
@@ -283,31 +288,55 @@ export default function App() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
 
-  const { isAdmin, session, logout } = useAdminSession();
+  const { isAdmin, session, logout } = useAdminSession(cliente?.id);
 
-  // Carga inicial del catálogo (Supabase si está configurado, si no el de ejemplo).
+  // Al cargar la página: averigua a qué cliente corresponde este dominio
+  // y aplica sus colores. En modo demo (Supabase sin configurar) esto
+  // no hace ninguna consulta y sigue de largo con los datos de ejemplo.
   useEffect(() => {
     let active = true;
-    fetchMotos()
+    fetchClienteActual()
+      .then((data) => {
+        if (!active) return;
+        setCliente(data);
+        if (data) applyTheme(data);
+      })
+      .catch(() => active && setCliente(null))
+      .finally(() => active && setClienteLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const showClienteNoEncontrado = isSupabaseConfigured && !clienteLoading && !cliente;
+
+  // Carga del catálogo, ya sabiendo a qué cliente pertenece este sitio.
+  useEffect(() => {
+    if (clienteLoading) return;
+    let active = true;
+    setMotosLoading(true);
+    fetchMotos(cliente?.id)
       .then((data) => active && setMotos(data))
       .catch(() => active && setMotos([]))
       .finally(() => active && setMotosLoading(false));
     return () => {
       active = false;
     };
-  }, []);
+  }, [clienteLoading, cliente?.id]);
 
-  // Si otro administrador carga/edita/borra una moto desde otro dispositivo,
-  // esta pantalla se actualiza sola (requiere Realtime habilitado, ver README).
+  // Si otro administrador carga/edita/borra una moto de ESTE cliente
+  // desde otro dispositivo, esta pantalla se actualiza sola (requiere
+  // Realtime habilitado, ver README).
   useEffect(() => {
-    const unsubscribe = subscribeToMotos(() => {
-      fetchMotos().then(setMotos).catch(() => {});
+    if (clienteLoading) return;
+    const unsubscribe = subscribeToMotos(cliente?.id, () => {
+      fetchMotos(cliente?.id).then(setMotos).catch(() => {});
     });
     return unsubscribe;
-  }, []);
+  }, [clienteLoading, cliente?.id]);
 
   function handleCargarMotosClick() {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || !cliente) {
       setNoticeOpen(true);
     } else if (!isAdmin) {
       setLoginOpen(true);
@@ -315,6 +344,20 @@ export default function App() {
       setCatalogOpen(true);
     }
   }
+
+  const config = cliente
+    ? {
+        businessName: cliente.nombre_negocio,
+        tagline: cliente.tagline,
+        whatsappNumber: cliente.whatsapp_number,
+        phoneDisplay: cliente.phone_display,
+        address: cliente.address,
+        hours: cliente.hours,
+        instagram: cliente.instagram,
+        facebook: cliente.facebook,
+        mapsUrl: cliente.maps_url,
+      }
+    : DEFAULT_CONFIG;
 
   const filtradas = useMemo(() => {
     let list = [...motos];
@@ -350,11 +393,20 @@ export default function App() {
     { label: "Contacto", href: "#contacto" },
   ];
 
+  if (clienteLoading) {
+    return <div className="min-h-screen bg-[var(--c-dark)]" />;
+  }
+
+  if (showClienteNoEncontrado) {
+    return <ClienteNoEncontradoNotice />;
+  }
+
   return (
-    <div id="top" className="min-h-screen bg-[#EDE8DC] text-[#17171C]">
+    <div id="top" className="min-h-screen bg-[var(--c-paper)] text-[var(--c-ink)]">
       {noticeOpen && <SupabaseNotConfiguredNotice onClose={() => setNoticeOpen(false)} />}
       {loginOpen && (
         <AdminLogin
+          clienteId={cliente?.id}
           onClose={() => setLoginOpen(false)}
           onSuccess={() => {
             setLoginOpen(false);
@@ -366,6 +418,7 @@ export default function App() {
         <CatalogAdminPanel
           motos={motos}
           setMotos={setMotos}
+          clienteId={cliente?.id}
           adminEmail={session?.user?.email}
           onClose={() => setCatalogOpen(false)}
           onLogout={async () => {
@@ -376,38 +429,38 @@ export default function App() {
       )}
 
       {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#15151A] border-b border-[#2A2A30]">
+      <header className="sticky top-0 z-40 bg-[var(--c-dark)] border-b border-[#2A2A30]">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2">
-            <Bike className="w-6 h-6 text-[#F5B700]" />
-            <span className="font-display text-lg tracking-wide text-[#F4F0E6] uppercase">{CONFIG.businessName}</span>
+            <Bike className="w-6 h-6 text-[var(--c-signal)]" />
+            <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
           </a>
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href} className="text-sm text-[#B9B6AC] hover:text-[#F5B700] transition-colors">
+              <a key={l.href} href={l.href} className="text-sm text-[#B9B6AC] hover:text-[var(--c-signal)] transition-colors">
                 {l.label}
               </a>
             ))}
           </nav>
           <div className="flex items-center gap-2">
             <a
-              href={waLink(CONFIG.whatsappNumber, "Hola! Quiero hacer una consulta.")}
+              href={waLink(config.whatsappNumber, "Hola! Quiero hacer una consulta.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 bg-[#F5B700] text-[#15151A] text-sm font-medium px-4 py-2 hover:bg-[#F4F0E6] transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 bg-[var(--c-signal)] text-[var(--c-dark)] text-sm font-medium px-4 py-2 hover:bg-[var(--c-paper2)] transition-colors"
             >
               <MessageCircle className="w-4 h-4" /> WhatsApp
             </a>
             <button
               onClick={handleCargarMotosClick}
-              className="relative text-[#8B8D8F] hover:text-[#F5B700] p-2"
+              className="relative text-[#8B8D8F] hover:text-[var(--c-signal)] p-2"
               aria-label="Cargar motos"
               title={isAdmin ? "Cargar motos (sesión iniciada)" : "Cargar motos"}
             >
               <PackagePlus className="w-5 h-5" />
-              {isAdmin && <ShieldCheck className="w-3 h-3 text-[#F5B700] absolute -bottom-0.5 -right-0.5" />}
+              {isAdmin && <ShieldCheck className="w-3 h-3 text-[var(--c-signal)] absolute -bottom-0.5 -right-0.5" />}
             </button>
-            <button className="md:hidden text-[#F4F0E6]" onClick={() => setMenuOpen((v) => !v)} aria-label="Menú">
+            <button className="md:hidden text-[var(--c-paper2)]" onClick={() => setMenuOpen((v) => !v)} aria-label="Menú">
               {menuOpen ? <X className="w-6 h-6" /> : <Bike className="w-6 h-6" />}
             </button>
           </div>
@@ -424,14 +477,14 @@ export default function App() {
       </header>
 
       {/* HERO */}
-      <section className="bg-[#15151A] relative overflow-hidden">
+      <section className="bg-[var(--c-dark)] relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{ backgroundImage: "repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 22px)" }}
         />
         <div className="max-w-6xl mx-auto px-5 pt-16 pb-14 relative">
-          <p className="font-mono text-xs tracking-[0.3em] text-[#F5B700] uppercase mb-4">{CONFIG.tagline}</p>
-          <h1 className="font-display text-5xl sm:text-6xl uppercase leading-[0.95] text-[#F4F0E6] max-w-2xl">
+          <p className="font-mono text-xs tracking-[0.3em] text-[var(--c-signal)] uppercase mb-4">{config.tagline}</p>
+          <h1 className="font-display text-5xl sm:text-6xl uppercase leading-[0.95] text-[var(--c-paper2)] max-w-2xl">
             La ruta
             <br />
             es tuya
@@ -440,10 +493,10 @@ export default function App() {
             0km y usadas seleccionadas, con financiación y permutas. Coordinamos todo por WhatsApp.
           </p>
           <div className="flex flex-wrap gap-3 mt-7">
-            <a href="#catalogo" className="bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#F4F0E6] transition-colors">
+            <a href="#catalogo" className="bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-paper2)] transition-colors">
               Ver catálogo
             </a>
-            <a href="#vender" className="border border-[#3A3A42] text-[#F4F0E6] px-5 py-2.5 hover:border-[#F5B700] transition-colors">
+            <a href="#vender" className="border border-[#3A3A42] text-[var(--c-paper2)] px-5 py-2.5 hover:border-[var(--c-signal)] transition-colors">
               Vendé tu moto
             </a>
           </div>
@@ -459,7 +512,7 @@ export default function App() {
             <span className="font-mono text-sm text-[#8B8D8F]">{filtradas.length} unidades</span>
             <button
               onClick={handleCargarMotosClick}
-              className="inline-flex items-center gap-1.5 bg-[#17171C] text-[#F4F0E6] text-sm px-3 py-2 hover:bg-[#C1440E] transition-colors"
+              className="inline-flex items-center gap-1.5 bg-[var(--c-ink)] text-[var(--c-paper2)] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors"
             >
               <PackagePlus className="w-4 h-4" /> Cargar moto
             </button>
@@ -472,7 +525,7 @@ export default function App() {
           </p>
         )}
 
-        <div className="bg-[#15151A] p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-[var(--c-dark)] p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <FieldSelect
             label="Marca"
             value={filtros.marca}
@@ -523,7 +576,7 @@ export default function App() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {mostrar.map((moto) => (
-              <MotoCard key={moto.id} moto={moto} />
+              <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} />
             ))}
           </div>
         )}
@@ -535,7 +588,7 @@ export default function App() {
           {visibles < filtradas.length && (
             <button
               onClick={() => setVisibles((v) => v + PAGE_SIZE)}
-              className="bg-[#17171C] text-[#F4F0E6] px-5 py-2.5 hover:bg-[#C1440E] transition-colors"
+              className="bg-[var(--c-ink)] text-[var(--c-paper2)] px-5 py-2.5 hover:bg-[var(--c-rust)] transition-colors"
             >
               Ver más unidades
             </button>
@@ -547,31 +600,31 @@ export default function App() {
 
       {/* FORMULARIOS */}
       <section id="pedir" className="max-w-6xl mx-auto px-5 py-12">
-        <PedirMotoForm />
+        <PedirMotoForm whatsappNumber={config.whatsappNumber} />
       </section>
       <section id="vender" className="max-w-6xl mx-auto px-5 pb-12">
-        <VenderMotoForm />
+        <VenderMotoForm whatsappNumber={config.whatsappNumber} />
       </section>
 
       <RoadDivider />
 
       {/* FOOTER */}
-      <footer id="contacto" className="bg-[#15151A] text-[#B9B6AC]">
+      <footer id="contacto" className="bg-[var(--c-dark)] text-[#B9B6AC]">
         <div className="max-w-6xl mx-auto px-5 py-12 grid sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Bike className="w-5 h-5 text-[#F5B700]" />
-              <span className="font-display text-lg tracking-wide text-[#F4F0E6] uppercase">{CONFIG.businessName}</span>
+              <Bike className="w-5 h-5 text-[var(--c-signal)]" />
+              <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
             </div>
             <p className="text-sm">La comunidad de compra y venta de motos del NEA.</p>
             <div className="flex gap-3 mt-4">
-              <a href={CONFIG.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-[#F5B700]">
+              <a href={config.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-signal)]">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href={CONFIG.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-[#F5B700]">
+              <a href={config.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-signal)]">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href={waLink(CONFIG.whatsappNumber, "Hola! Quiero hacer una consulta.")} target="_blank" rel="noopener noreferrer" className="hover:text-[#F5B700]">
+              <a href={waLink(config.whatsappNumber, "Hola! Quiero hacer una consulta.")} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-signal)]">
                 <MessageCircle className="w-5 h-5" />
               </a>
             </div>
@@ -582,7 +635,7 @@ export default function App() {
             <ul className="flex flex-col gap-2 text-sm">
               {navLinks.map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} className="hover:text-[#F5B700]">
+                  <a href={l.href} className="hover:text-[var(--c-signal)]">
                     {l.label}
                   </a>
                 </li>
@@ -595,23 +648,23 @@ export default function App() {
             <ul className="flex flex-col gap-2 text-sm">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                <a href={CONFIG.mapsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#F5B700]">
-                  {CONFIG.address}
+                <a href={config.mapsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-signal)]">
+                  {config.address}
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <Clock className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{CONFIG.hours}</span>
+                <span>{config.hours}</span>
               </li>
               <li className="flex items-start gap-2">
                 <MessageCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span className="font-mono">{CONFIG.phoneDisplay}</span>
+                <span className="font-mono">{config.phoneDisplay}</span>
               </li>
             </ul>
           </div>
         </div>
         <div className="border-t border-[#2A2A30] py-4 text-center text-xs font-mono text-[#5B5852]">
-          © {new Date().getFullYear()} {CONFIG.businessName} · Compraventa de motos en el Nordeste Argentino
+          © {new Date().getFullYear()} {config.businessName} · Compraventa de motos en el Nordeste Argentino
         </div>
       </footer>
     </div>

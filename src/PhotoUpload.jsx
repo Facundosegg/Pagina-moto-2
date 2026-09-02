@@ -51,14 +51,14 @@ export default function PhotoUpload({ value, onChange }) {
             <div key={url + i} className="relative w-20 h-20 group">
               <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover border border-[#D8D2C0]" />
               {i === 0 ? (
-                <span className="absolute top-0.5 left-0.5 bg-[#F5B700] text-[#15151A] text-[9px] font-mono px-1 py-0.5 flex items-center gap-0.5">
+                <span className="absolute top-0.5 left-0.5 bg-[var(--c-signal)] text-[var(--c-dark)] text-[9px] font-mono px-1 py-0.5 flex items-center gap-0.5">
                   <Star className="w-2.5 h-2.5 fill-current" /> Portada
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => makeCover(i)}
-                  className="absolute inset-x-0 bottom-0 bg-black/60 text-[#F4F0E6] text-[9px] py-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute inset-x-0 bottom-0 bg-black/60 text-[var(--c-paper2)] text-[9px] py-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Usar como portada"
                 >
                   Hacer portada
@@ -67,7 +67,7 @@ export default function PhotoUpload({ value, onChange }) {
               <button
                 type="button"
                 onClick={() => removePhoto(i)}
-                className="absolute -top-1.5 -right-1.5 bg-[#C1440E] text-[#F4F0E6] rounded-full w-4 h-4 flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 bg-[var(--c-rust)] text-[var(--c-paper2)] rounded-full w-4 h-4 flex items-center justify-center"
                 aria-label={`Sacar foto ${i + 1}`}
               >
                 <X className="w-2.5 h-2.5" />
@@ -81,7 +81,7 @@ export default function PhotoUpload({ value, onChange }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="inline-flex items-center justify-center gap-2 border border-dashed border-[#8B8D8F] text-[#5B5852] text-sm px-4 py-4 hover:border-[#C1440E] hover:text-[#C1440E] transition-colors disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 border border-dashed border-[#8B8D8F] text-[#5B5852] text-sm px-4 py-4 hover:border-[var(--c-rust)] hover:text-[var(--c-rust)] transition-colors disabled:opacity-50"
       >
         {uploading ? (
           <>
@@ -94,7 +94,7 @@ export default function PhotoUpload({ value, onChange }) {
         )}
       </button>
 
-      {error && <p className="text-xs text-[#C1440E]">{error}</p>}
+      {error && <p className="text-xs text-[var(--c-rust)]">{error}</p>}
       <p className="text-xs text-[#8B8D8F]">
         Podés elegir varias a la vez. La primera (marcada "Portada") es la que se ve en el catálogo — tocá "Hacer
         portada" en cualquier otra para cambiarla. Se puede dejar sin fotos.

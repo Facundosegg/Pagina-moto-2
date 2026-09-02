@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { LogIn, X } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabaseClient.js";
 
-export default function AdminLogin({ onClose, onSuccess }) {
+export default function AdminLogin({ clienteId, onClose, onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,24 +13,32 @@ export default function AdminLogin({ onClose, onSuccess }) {
     if (!isSupabaseConfigured) return;
     setLoading(true);
     setError("");
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
+      setLoading(false);
       setError("Usuario o contraseña incorrectos.");
       return;
     }
+    const userClienteId = data.user?.user_metadata?.cliente_id;
+    if (clienteId && userClienteId !== clienteId) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setError("Ese usuario no es administrador de este sitio.");
+      return;
+    }
+    setLoading(false);
     onSuccess();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-[#EDE8DC] w-full max-w-sm">
-        <div className="bg-[#15151A] px-5 py-4 flex items-center justify-between">
+      <div className="bg-[var(--c-paper)] w-full max-w-sm">
+        <div className="bg-[var(--c-dark)] px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <LogIn className="w-5 h-5 text-[#F5B700]" />
-            <h3 className="font-display text-xl uppercase tracking-wide text-[#F4F0E6]">Acceso administrador</h3>
+            <LogIn className="w-5 h-5 text-[var(--c-signal)]" />
+            <h3 className="font-display text-xl uppercase tracking-wide text-[var(--c-paper2)]">Acceso administrador</h3>
           </div>
-          <button onClick={onClose} className="text-[#B9B6AC] hover:text-[#F4F0E6]" aria-label="Cerrar">
+          <button onClick={onClose} className="text-[#B9B6AC] hover:text-[var(--c-paper2)]" aria-label="Cerrar">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -44,7 +52,7 @@ export default function AdminLogin({ onClose, onSuccess }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E]"
+              className="bg-white border border-[#D8D2C0] text-[var(--c-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--c-rust)]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -54,14 +62,14 @@ export default function AdminLogin({ onClose, onSuccess }) {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E]"
+              className="bg-white border border-[#D8D2C0] text-[var(--c-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--c-rust)]"
             />
           </label>
-          {error && <p className="text-sm text-[#C1440E]">{error}</p>}
+          {error && <p className="text-sm text-[var(--c-rust)]">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-[#F4F0E6] transition-colors disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-ink)] hover:text-[var(--c-paper2)] transition-colors disabled:opacity-50"
           >
             <LogIn className="w-4 h-4" /> {loading ? "Entrando..." : "Entrar"}
           </button>

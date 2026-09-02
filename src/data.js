@@ -1,24 +1,20 @@
 /* ==============================================================================
    DATOS DEL SITIO
    ==============================================================================
-   Este es el ÚNICO archivo que necesitás tocar para actualizar el sitio:
-   tus datos de contacto y el catálogo de motos. No hace falta saber
-   programar, solo respetar las comas y las comillas.
+   Este archivo es solo el catálogo y los datos de DEMO — los que se ven
+   si todavía no conectaste la base de datos, o si entrás desde un
+   dominio que no está dado de alta como cliente.
 
-   Cómo se actualiza en el sitio ya publicado:
-   1. Editás este archivo.
-   2. Guardás.
-   3. Si publicaste con Netlify Drop: corré "npm run build" de nuevo y
-      arrastrá la carpeta "dist" a Netlify otra vez.
-      Si publicaste con GitHub + Vercel: hacé "git push" y se actualiza solo.
-   Los pasos completos están en el README.md
+   Los datos reales de cada cliente (nombre, WhatsApp, colores, catálogo)
+   viven en la tabla "clientes" de Supabase, no acá — así cada dominio
+   puede tener los suyos. Ver el README, sección "Múltiples clientes".
    ============================================================================== */
 
 // ------------------------------------------------------------------------------
-// CONFIG — Datos de contacto y del negocio.
+// DEFAULT_CONFIG — Datos de contacto y del negocio, SOLO para el modo demo.
 // ------------------------------------------------------------------------------
-export const CONFIG = {
-  businessName: "RUTA NEA MOTOS",
+export const DEFAULT_CONFIG = {
+  businessName: "RUTA NEA MOTOS (demo)",
   tagline: "Motos 0km y usadas en el Nordeste",
   whatsappNumber: "5493625000000", // Código de país (54) + 9 + código de área + número, SIN + ni espacios
   phoneDisplay: "362 500 0000",
@@ -31,6 +27,7 @@ export const CONFIG = {
 
 // ------------------------------------------------------------------------------
 // MARCAS — las que aparecen en los filtros y en el formulario de "vendé la tuya".
+// Por ahora es la misma lista para todos los clientes.
 // ------------------------------------------------------------------------------
 export const MARCAS = ["APRILIA", "BAJAJ", "BENELLI", "CORVEN", "HONDA", "KAWASAKI", "KTM", "MOTOMEL", "VOGE", "YAMAHA"];
 

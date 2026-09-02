@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Colores de marca — valores por defecto. Se pisan en tiempo real según
+   el cliente que corresponda al dominio (ver src/clienteApi.js). */
+:root {
+  --c-signal: #f5b700; /* acento principal / botones */
+  --c-dark: #15151a; /* fondo oscuro (header, hero, footer) */
+  --c-paper: #ede8dc; /* fondo claro (secciones) */
+  --c-rust: #c1440e; /* acento secundario / hover */
+  --c-paper2: #f4f0e6; /* tarjetas sobre fondo claro */
+  --c-ink: #17171c; /* texto oscuro sobre fondo claro */
+}
+
 .font-mono {
   font-family: "IBM Plex Mono", monospace;
 }

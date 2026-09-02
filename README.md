@@ -204,17 +204,17 @@ tacho de basura en cada fila).
 
 ---
 
-## 2. Editar tus datos de contacto
+## 2. Datos de contacto (nombre, WhatsApp, dirección, colores)
 
-`CONFIG` y `MARCAS`, en `src/data.js`, siguen siendo texto que se edita
-a mano: nombre del negocio, WhatsApp, dirección, horario y redes. No
-hace falta saber programar, solo respetar las comillas y las comas.
-Después de editarlo hay que volver a publicar (ver la sección
-"Publicarlo en internet" para saber cómo, según el método que uses).
+Esto cambió: ya no se edita en `src/data.js`. Cada cliente tiene sus
+propios datos guardados en la base de datos (tabla `clientes`), así
+cada dominio muestra los suyos. Ver la sección **5. Múltiples
+clientes** más abajo para dar de alta o editar un cliente.
 
-`whatsappNumber` tiene que tener el formato: código de país (54) + 9 +
-código de área sin el 0 + número sin el 15. Ejemplo, para (0362)
-15-400-0000: `5493624000000`.
+`src/data.js` (`DEFAULT_CONFIG` y `MARCAS`) quedó solo como el
+catálogo y los datos que se muestran en **modo demo** — cuando todavía
+no conectaste Supabase, o cuando entrás desde un dominio que no está
+dado de alta como cliente.
 
 ---
 
@@ -265,3 +265,217 @@ navegador.
 Si querés un dominio propio (ej. `rutaneamotos.com.ar`), tanto Netlify
 como Vercel tienen una opción para conectarlo, una vez que lo compres
 en NIC Argentina o en cualquier registrador.
+
+---
+
+## 5. Múltiples clientes (una plataforma para varios negocios)
+
+Con esto, el mismo sitio (mismo código, mismo proyecto en Vercel,
+misma base en Supabase) puede atender varios negocios distintos: cada
+uno con su propio dominio, su propio catálogo, sus propios colores y
+su propio usuario administrador — sin poder ver ni tocar el catálogo
+de los demás.
+
+**Importante — hacé esto UNA sola vez, con cuidado:** como ya tenías
+motos cargadas antes de este cambio, hay que migrarlas para que no se
+pierdan. Los pasos de abajo primero arman la estructura nueva, y
+después "adoptan" tus datos actuales como tu primer cliente.
+
+### Paso 5.1 — Creá la tabla de clientes
+
+En Supabase, **SQL Editor → New query**, pegá esto y tocá **Run**:
+
+```sql
+create table clientes (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  dominio text unique,
+  nombre_negocio text not null default 'Mi Negocio de Motos',
+  tagline text not null default '',
+  whatsapp_number text not null default '',
+  phone_display text not null default '',
+  address text not null default '',
+  hours text not null default '',
+  instagram text not null default '',
+  facebook text not null default '',
+  maps_url text not null default '',
+  color_signal text not null default '#F5B700',
+  color_dark text not null default '#15151A',
+  color_paper text not null default '#EDE8DC',
+  color_rust text not null default '#C1440E',
+  color_paper2 text not null default '#F4F0E6',
+  color_ink text not null default '#17171C',
+  created_at timestamptz not null default now()
+);
+
+alter table clientes enable row level security;
+
+create policy "Cualquiera puede ver los datos de un cliente"
+on clientes for select
+using ( true );
+```
+
+A propósito, esta tabla **no** tiene políticas de "insert/update/delete"
+para nadie — eso significa que solo vos, entrando por el SQL Editor de
+Supabase, podés dar de alta o editar clientes. Nadie puede crearse uno
+desde el sitio.
+
+`slug` es un identificador corto tuyo (ej. `ruta-nea-motos`), sin
+espacios — se usa internamente y también sirve para probar un cliente
+en cualquier URL con `?cliente=ese-slug` (ver más abajo). `dominio`
+tiene que ser exactamente el dominio con el que la gente entra al sitio
+de ese cliente (ej. `motosjuan.com.ar` o `motosjuan.vercel.app`, sin
+`https://` ni barra al final).
+
+### Paso 5.2 — Migrá tu catálogo actual a tu primer cliente
+
+1. Agregá la columna que conecta cada moto con su cliente:
+
+```sql
+alter table motos add column if not exists cliente_id uuid references clientes(id);
+```
+
+2. Dá de alta tu propio negocio como el primer cliente. Reemplazá los
+   valores por los tuyos reales (el `dominio` tiene que ser el que ves
+   en la barra del navegador cuando entrás a tu sitio hoy) y tocá **Run**:
+
+```sql
+insert into clientes (slug, dominio, nombre_negocio, tagline, whatsapp_number, phone_display, address, hours, instagram, facebook, maps_url)
+values (
+  'ruta-nea-motos',
+  'pagina-moto-22026.vercel.app',
+  'RUTA NEA MOTOS',
+  'Motos 0km y usadas en el Nordeste',
+  '5493625000000',
+  '362 500 0000',
+  'Av. 9 de Julio 1234, Resistencia, Chaco',
+  'Lun a Vie de 8:30 a 12:30 y de 16:30 a 20:30 · Sáb de 9 a 13',
+  'https://instagram.com/tumarca',
+  'https://facebook.com/tumarca',
+  'https://www.google.com/maps'
+)
+returning id;
+```
+
+3. Ese `Run` te devuelve una fila con un `id` (un código largo tipo
+   `a1b2c3d4-...`). **Copialo**, lo vas a necesitar dos veces ahora.
+
+4. Con ese `id` copiado, asigná todas tus motos actuales a este cliente
+   (reemplazá `PEGAR-EL-ID-ACA` por el que copiaste):
+
+```sql
+update motos set cliente_id = 'PEGAR-EL-ID-ACA' where cliente_id is null;
+```
+
+5. Actualizá los permisos de la tabla `motos` para que cada admin solo
+   pueda tocar las motos de SU cliente:
+
+```sql
+drop policy if exists "Solo admins logueados pueden cargar motos" on motos;
+drop policy if exists "Solo admins logueados pueden editar motos" on motos;
+drop policy if exists "Solo admins logueados pueden borrar motos" on motos;
+
+create policy "Cada admin carga motos solo de su cliente"
+on motos for insert
+to authenticated
+with check ( cliente_id = (auth.jwt() -> 'user_metadata' ->> 'cliente_id')::uuid );
+
+create policy "Cada admin edita motos solo de su cliente"
+on motos for update
+to authenticated
+using ( cliente_id = (auth.jwt() -> 'user_metadata' ->> 'cliente_id')::uuid )
+with check ( cliente_id = (auth.jwt() -> 'user_metadata' ->> 'cliente_id')::uuid );
+
+create policy "Cada admin borra motos solo de su cliente"
+on motos for delete
+to authenticated
+using ( cliente_id = (auth.jwt() -> 'user_metadata' ->> 'cliente_id')::uuid );
+```
+
+6. Conectá tu usuario administrador actual con ese mismo cliente
+   (reemplazá el email por el tuyo y el id por el mismo que copiaste):
+
+```sql
+update auth.users
+set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('cliente_id', 'PEGAR-EL-ID-ACA')
+where email = 'tu-email-de-administrador@ejemplo.com';
+```
+
+7. Subí el código nuevo a GitHub (como siempre: descomprimir el zip,
+   Add file → Upload files, arrastrar todo, Commit changes) y esperá el
+   redeploy de Vercel.
+
+8. Entrá a tu sitio de siempre. Tiene que verse exactamente igual que
+   antes, con tus mismas motos, y el login de administrador tiene que
+   seguir funcionando igual.
+
+### Paso 5.3 — Dar de alta un cliente nuevo (la receta de acá en más)
+
+Cada vez que quieras sumar un cliente nuevo a la plataforma:
+
+1. **Conectá su dominio en Vercel.** Entrá al proyecto en Vercel →
+   Settings → Domains → Add. Si el cliente compró un dominio propio
+   (ej. `motosjuan.com.ar`), Vercel te va a mostrar qué registro DNS
+   cargar donde compró el dominio (NIC Argentina, etc.) — es un paso
+   único que hace el cliente o vos por él. Si no tiene dominio propio
+   todavía, también podés agregar un subdominio gratis del tipo
+   `motosjuan.vercel.app` sin configurar nada más.
+
+2. **Dalo de alta en la base de datos.** SQL Editor → New query:
+
+```sql
+insert into clientes (slug, dominio, nombre_negocio, tagline, whatsapp_number, phone_display, address, hours, instagram, facebook, maps_url, color_signal, color_dark, color_paper, color_rust, color_paper2, color_ink)
+values (
+  'motos-juan',
+  'motosjuan.com.ar',
+  'MOTOS JUAN',
+  'Tu frase corta acá',
+  '549...',
+  '...',
+  '...',
+  '...',
+  '...',
+  '...',
+  'https://www.google.com/maps',
+  '#2E86AB', -- color principal / botones (probá con el color de marca del cliente)
+  '#101820', -- fondo oscuro
+  '#F2F0EA', -- fondo claro
+  '#A23B72', -- color secundario / hover
+  '#FFFFFF', -- tarjetas
+  '#101820'  -- texto oscuro
+)
+returning id;
+```
+
+   Copiá el `id` que te devuelve.
+
+3. **Creale su usuario administrador.** Authentication → Users → Add
+   user → Create new user (con "Auto Confirm User" marcado). Después:
+
+```sql
+update auth.users
+set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('cliente_id', 'EL-ID-DE-ESTE-CLIENTE')
+where email = 'email-del-admin-de-este-cliente@ejemplo.com';
+```
+
+4. **Probalo antes de que el dominio real esté listo.** Mientras el DNS
+   del dominio nuevo todavía no propagó, podés ver ese cliente en
+   cualquier URL agregando `?cliente=motos-juan` al final (usando el
+   `slug` que le pusiste). Por ejemplo:
+   `https://pagina-moto-22026.vercel.app/?cliente=motos-juan`
+
+Listo — ese cliente ya tiene su propio sitio, con sus colores, su
+WhatsApp, y un catálogo vacío para que empiece a cargar sus motos con
+su usuario.
+
+### Cómo editar los datos o colores de un cliente ya creado
+
+Directo por SQL, por ejemplo para cambiarle el WhatsApp:
+
+```sql
+update clientes set whatsapp_number = '549...' where slug = 'motos-juan';
+```
+
+O cualquier otro campo (`nombre_negocio`, `color_signal`, etc.) de la
+misma forma.
+

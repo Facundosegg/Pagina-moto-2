@@ -22,7 +22,7 @@ function blankMotoForm() {
   };
 }
 
-export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, adminEmail }) {
+export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose, onLogout, adminEmail }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(blankMotoForm());
   const [error, setError] = useState("");
@@ -89,7 +89,7 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
         await updateMotoById(editingId, payload);
         setMotos((prev) => prev.map((m) => (m.id === editingId ? { ...m, ...payload } : m)));
       } else {
-        const created = await insertMoto(payload);
+        const created = await insertMoto(payload, clienteId);
         setMotos((prev) => [created, ...prev]);
       }
       startNew();
@@ -115,20 +115,20 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto">
-      <div className="bg-[#EDE8DC] w-full max-w-3xl my-8">
-        <div className="bg-[#15151A] px-5 py-4 flex items-center justify-between">
+      <div className="bg-[var(--c-paper)] w-full max-w-3xl my-8">
+        <div className="bg-[var(--c-dark)] px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <PackagePlus className="w-5 h-5 text-[#F5B700]" />
+            <PackagePlus className="w-5 h-5 text-[var(--c-signal)]" />
             <div>
-              <h3 className="font-display text-xl uppercase tracking-wide text-[#F4F0E6] leading-tight">Cargar motos</h3>
+              <h3 className="font-display text-xl uppercase tracking-wide text-[var(--c-paper2)] leading-tight">Cargar motos</h3>
               {adminEmail && <p className="font-mono text-[10px] text-[#8B8D8F]">{adminEmail}</p>}
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onLogout} className="text-[#B9B6AC] hover:text-[#F5B700] flex items-center gap-1 text-xs" title="Cerrar sesión">
+            <button onClick={onLogout} className="text-[#B9B6AC] hover:text-[var(--c-signal)] flex items-center gap-1 text-xs" title="Cerrar sesión">
               <LogOut className="w-4 h-4" /> Salir
             </button>
-            <button onClick={onClose} className="text-[#B9B6AC] hover:text-[#F4F0E6]" aria-label="Cerrar">
+            <button onClick={onClose} className="text-[#B9B6AC] hover:text-[var(--c-paper2)]" aria-label="Cerrar">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -161,18 +161,18 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
               />
             </div>
             <PhotoUpload value={form.fotos} onChange={(fotos) => setForm((f) => ({ ...f, fotos }))} />
-            {error && <p className="text-sm text-[#C1440E]">{error}</p>}
+            {error && <p className="text-sm text-[var(--c-rust)]">{error}</p>}
             <div className="flex items-center gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-[#F4F0E6] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-ink)] hover:text-[var(--c-paper2)] transition-colors disabled:opacity-50"
               >
                 {editingId != null ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 {saving ? "Guardando..." : editingId != null ? "Guardar cambios" : "Agregar moto"}
               </button>
               {editingId != null && (
-                <button type="button" onClick={startNew} className="text-sm text-[#8B8D8F] hover:text-[#17171C]">
+                <button type="button" onClick={startNew} className="text-sm text-[#8B8D8F] hover:text-[var(--c-ink)]">
                   Cancelar edición
                 </button>
               )}
@@ -190,19 +190,19 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
                 {sorted.map((m) => (
                   <li key={m.id} className="py-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm text-[#17171C] truncate">
+                      <p className="text-sm text-[var(--c-ink)] truncate">
                         <span className="font-mono text-[#8B8D8F]">{m.marca}</span> {m.modelo}{" "}
                         <span className="text-[#8B8D8F]">· {m.anio || "S/D"}</span>
                       </p>
                       <p className="font-mono text-xs text-[#5B5852]">{formatMoney(m.precio, m.moneda)}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => startEdit(m)} className="p-2 text-[#8B8D8F] hover:text-[#17171C]" aria-label={`Editar ${m.modelo}`} title="Editar">
+                      <button onClick={() => startEdit(m)} className="p-2 text-[#8B8D8F] hover:text-[var(--c-ink)]" aria-label={`Editar ${m.modelo}`} title="Editar">
                         <Pencil className="w-4 h-4" />
                       </button>
                       {confirmDeleteId === m.id ? (
                         <>
-                          <button onClick={() => handleDelete(m.id)} className="text-xs bg-[#C1440E] text-[#F4F0E6] px-2 py-1">
+                          <button onClick={() => handleDelete(m.id)} className="text-xs bg-[var(--c-rust)] text-[var(--c-paper2)] px-2 py-1">
                             Confirmar
                           </button>
                           <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-[#8B8D8F] px-2 py-1">
@@ -210,7 +210,7 @@ export default function CatalogAdminPanel({ motos, setMotos, onClose, onLogout, 
                           </button>
                         </>
                       ) : (
-                        <button onClick={() => setConfirmDeleteId(m.id)} className="p-2 text-[#8B8D8F] hover:text-[#C1440E]" aria-label={`Eliminar ${m.modelo}`} title="Eliminar">
+                        <button onClick={() => setConfirmDeleteId(m.id)} className="p-2 text-[#8B8D8F] hover:text-[var(--c-rust)]" aria-label={`Eliminar ${m.modelo}`} title="Eliminar">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}

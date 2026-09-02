@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase, isSupabaseConfigured } from "./supabaseClient.js";
 
-export function useAdminSession() {
+export function useAdminSession(clienteId) {
   const [session, setSession] = useState(null);
   const [checking, setChecking] = useState(isSupabaseConfigured);
 
@@ -31,5 +31,7 @@ export function useAdminSession() {
     await supabase.auth.signOut();
   }
 
-  return { session, isAdmin: Boolean(session), checking, logout };
+  const belongsToThisCliente = !clienteId || session?.user?.user_metadata?.cliente_id === clienteId;
+
+  return { session, isAdmin: Boolean(session) && belongsToThisCliente, checking, logout };
 }
