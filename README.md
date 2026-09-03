@@ -306,6 +306,7 @@ create table clientes (
   color_paper2 text not null default '#F4F0E6',
   color_ink text not null default '#17171C',
   logo_url text,
+  cover_url text,
   created_at timestamptz not null default now()
 );
 
@@ -500,4 +501,28 @@ update clientes set logo_url = 'https://tu-link-de-la-imagen' where slug = 'moto
 
 Si un cliente no tiene `logo_url` cargado, el sitio sigue mostrando el
 ícono de moto de siempre — no hace falta que todos tengan logo.
+
+### Paso 5.5 — Foto de portada del hero (opcional)
+
+**Si ya diste de alta clientes antes de este paso**, agregales la
+columna una vez:
+
+```sql
+alter table clientes add column if not exists cover_url text;
+```
+
+Es la foto grande de fondo de la sección de arriba de todo (donde dice
+"La ruta es tuya"). Se sube y se carga igual que el logo: subila a
+Supabase Storage, copiá el link público, y:
+
+```sql
+update clientes set cover_url = 'https://tu-link-de-la-imagen' where slug = 'motos-juan';
+```
+
+Conviene una foto horizontal, ancha (ideal 1600x800px o similar), de
+buena calidad — una moto, el local, algo representativo del negocio.
+El sitio le pone un degradado oscuro encima para que el texto se siga
+leyendo bien, así que fotos algo claras funcionan mejor que fotos ya
+muy oscuras. Si un cliente no tiene `cover_url` cargado, se ve el fondo
+oscuro con la textura de líneas de siempre, sin foto.
 

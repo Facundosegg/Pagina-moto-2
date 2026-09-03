@@ -16,12 +16,12 @@ import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
 const PAGE_SIZE = 8;
 
 /* ------------------------------------------------------------------------ */
-function BrandLogo({ logoUrl, businessName, className = "w-6 h-6" }) {
+function BrandLogo({ logoUrl, businessName, iconClassName = "w-6 h-6", imgClassName = "h-9 w-auto max-w-[150px]" }) {
   const [error, setError] = useState(false);
   if (logoUrl && !error) {
-    return <img src={logoUrl} alt={businessName} className={`${className} object-contain`} onError={() => setError(true)} />;
+    return <img src={logoUrl} alt={businessName} className={`${imgClassName} object-contain`} onError={() => setError(true)} />;
   }
-  return <Bike className={`${className} text-[var(--c-signal)]`} />;
+  return <Bike className={`${iconClassName} text-[var(--c-signal)]`} />;
 }
 
 function RoadDivider() {
@@ -365,6 +365,7 @@ export default function App() {
         facebook: cliente.facebook,
         mapsUrl: cliente.maps_url,
         logoUrl: cliente.logo_url,
+        coverUrl: cliente.cover_url,
       }
     : DEFAULT_CONFIG;
 
@@ -441,7 +442,12 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-[var(--c-dark)] border-b border-[#2A2A30]">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2">
-            <BrandLogo logoUrl={config.logoUrl} businessName={config.businessName} className="w-7 h-7" />
+            <BrandLogo
+              logoUrl={config.logoUrl}
+              businessName={config.businessName}
+              iconClassName="w-7 h-7"
+              imgClassName="h-10 w-auto max-w-[170px]"
+            />
             <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
           </a>
           <nav className="hidden md:flex items-center gap-6">
@@ -487,10 +493,17 @@ export default function App() {
 
       {/* HERO */}
       <section className="bg-[var(--c-dark)] relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{ backgroundImage: "repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 22px)" }}
-        />
+        {config.coverUrl ? (
+          <>
+            <img src={config.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25" />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{ backgroundImage: "repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 22px)" }}
+          />
+        )}
         <div className="max-w-6xl mx-auto px-5 pt-16 pb-14 relative">
           <p className="font-mono text-xs tracking-[0.3em] text-[var(--c-signal)] uppercase mb-4">{config.tagline}</p>
           <h1 className="font-display text-5xl sm:text-6xl uppercase leading-[0.95] text-[var(--c-paper2)] max-w-2xl">
@@ -622,7 +635,12 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-5 py-12 grid sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <BrandLogo logoUrl={config.logoUrl} businessName={config.businessName} className="w-6 h-6" />
+              <BrandLogo
+                logoUrl={config.logoUrl}
+                businessName={config.businessName}
+                iconClassName="w-6 h-6"
+                imgClassName="h-8 w-auto max-w-[130px]"
+              />
               <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
             </div>
             <p className="text-sm">La comunidad de compra y venta de motos del NEA.</p>
