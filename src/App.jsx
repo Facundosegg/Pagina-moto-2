@@ -158,47 +158,76 @@ function MotoCard({ moto, whatsappNumber }) {
   );
 }
 
-function PedirMotoForm({ whatsappNumber }) {
-  const [form, setForm] = useState({ nombre: "", whatsapp: "", email: "", marca: "Cualquiera", modelo: "", presupuesto: "", comentario: "" });
+function PedirMotoForm({ whatsappNumber, motos }) {
+  const [form, setForm] = useState({
+    nombre: "",
+    whatsapp: "",
+    email: "",
+    motoId: "otra",
+    marca: "Cualquiera",
+    modelo: "",
+    presupuesto: "",
+    comentario: "",
+  });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const canSubmit = form.nombre.trim() && form.whatsapp.trim();
+  const motoElegida = form.motoId !== "otra" ? motos.find((m) => String(m.id) === form.motoId) : null;
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
     const lines = [
-      `Hola! Quiero que me avisen cuando entre una moto.`,
+      motoElegida ? `Hola! Estoy interesado en esta moto del catálogo:` : `Hola! Quiero que me avisen cuando entre una moto.`,
+      motoElegida &&
+        `Moto: ${motoElegida.marca} ${motoElegida.modelo} (${motoElegida.anio}) — ${formatMoney(motoElegida.precio, motoElegida.moneda)}`,
       `Nombre: ${form.nombre}`,
       `WhatsApp: ${form.whatsapp}`,
       form.email && `Email: ${form.email}`,
-      `Marca: ${form.marca}`,
-      form.modelo && `Modelo: ${form.modelo}`,
-      form.presupuesto && `Presupuesto aprox: ${form.presupuesto}`,
+      !motoElegida && `Marca: ${form.marca}`,
+      !motoElegida && form.modelo && `Modelo: ${form.modelo}`,
+      !motoElegida && form.presupuesto && `Presupuesto aprox: ${form.presupuesto}`,
       form.comentario && `Comentario: ${form.comentario}`,
     ].filter(Boolean);
     window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
   }
+
+  const motoOptions = [
+    { value: "otra", label: "Otra que no está en el catálogo" },
+    ...motos.map((m) => ({
+      value: String(m.id),
+      label: `${m.marca} ${m.modelo} (${m.anio}) — ${formatMoney(m.precio, m.moneda)}`,
+    })),
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="bg-[#1B1B20] border border-[#3A3A42] p-6 flex flex-col gap-4">
       <div>
         <h3 className="font-display text-2xl uppercase tracking-wide text-[var(--c-paper2)]">Pedí tu moto</h3>
         <p className="text-sm text-[#B9B6AC] mt-1">
-          Contanos qué moto querés y te avisamos por WhatsApp apenas entre. Sin registrarte.
+          Elegí una moto del catálogo, o contanos qué buscás y te avisamos por WhatsApp apenas entre. Sin registrarte.
         </p>
       </div>
+
+      {motos.length > 0 && (
+        <FieldSelect label="¿Qué moto te interesa?" value={form.motoId} onChange={set("motoId")} options={motoOptions} />
+      )}
+
       <div className="grid sm:grid-cols-2 gap-4">
         <TextInput label="Tu nombre" required value={form.nombre} onChange={set("nombre")} />
         <TextInput label="WhatsApp" required value={form.whatsapp} onChange={set("whatsapp")} placeholder="362 400 0000" />
         <TextInput label="Email (opcional)" value={form.email} onChange={set("email")} type="email" />
-        <FieldSelect
-          label="Marca"
-          value={form.marca}
-          onChange={set("marca")}
-          options={[{ value: "Cualquiera", label: "Cualquiera" }, ...MARCAS.map((m) => ({ value: m, label: m }))]}
-        />
-        <TextInput label="Modelo" value={form.modelo} onChange={set("modelo")} />
-        <TextInput label="Presupuesto aprox. (opcional)" value={form.presupuesto} onChange={set("presupuesto")} placeholder="US$ 5.000" />
+        {!motoElegida && (
+          <>
+            <FieldSelect
+              label="Marca"
+              value={form.marca}
+              onChange={set("marca")}
+              options={[{ value: "Cualquiera", label: "Cualquiera" }, ...MARCAS.map((m) => ({ value: m, label: m }))]}
+            />
+            <TextInput label="Modelo" value={form.modelo} onChange={set("modelo")} />
+            <TextInput label="Presupuesto aprox. (opcional)" value={form.presupuesto} onChange={set("presupuesto")} placeholder="US$ 5.000" />
+          </>
+        )}
       </div>
       <label className="flex flex-col gap-1">
         <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Algo más que debamos saber (opcional)</span>
@@ -215,7 +244,7 @@ function PedirMotoForm({ whatsappNumber }) {
         disabled={!canSubmit}
         className="self-start inline-flex items-center gap-2 bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-paper2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <MessageCircle className="w-4 h-4" /> Avisame cuando llegue
+        <MessageCircle className="w-4 h-4" /> {motoElegida ? "Consultar por esta moto" : "Avisame cuando llegue"}
       </button>
     </form>
   );
@@ -622,7 +651,7 @@ export default function App() {
 
       {/* FORMULARIOS */}
       <section id="pedir" className="max-w-6xl mx-auto px-5 py-12">
-        <PedirMotoForm whatsappNumber={config.whatsappNumber} />
+        <PedirMotoForm whatsappNumber={config.whatsappNumber} motos={motos} />
       </section>
       <section id="vender" className="max-w-6xl mx-auto px-5 pb-12">
         <VenderMotoForm whatsappNumber={config.whatsappNumber} />
