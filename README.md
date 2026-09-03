@@ -526,3 +526,58 @@ leyendo bien, así que fotos algo claras funcionan mejor que fotos ya
 muy oscuras. Si un cliente no tiene `cover_url` cargado, se ve el fondo
 oscuro con la textura de líneas de siempre, sin foto.
 
+### Paso 5.6 — Panel de plataforma (crear y editar clientes sin SQL)
+
+Esto te da un panel exclusivo para vos: una lista de todos los
+clientes, con botón para crear uno nuevo y para editar cualquiera —
+nombre, WhatsApp, colores (con selector visual), logo, foto de
+portada, todo sin copiar código. Se accede agregando `?panel=plataforma`
+a cualquier URL del sitio, por ejemplo:
+
+`https://pagina-moto-22026.vercel.app/?panel=plataforma`
+
+**Paso único de configuración:**
+
+1. Dale permiso a la tabla `clientes` para que un administrador de
+   plataforma pueda crear y editar filas (hasta ahora solo se podía por
+   SQL). SQL Editor → New query:
+
+```sql
+create policy "Superadmin puede crear clientes"
+on clientes for insert
+to authenticated
+with check ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+
+create policy "Superadmin puede editar clientes"
+on clientes for update
+to authenticated
+using ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true )
+with check ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+
+create policy "Superadmin puede borrar clientes"
+on clientes for delete
+to authenticated
+using ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+```
+
+2. Marcate a vos mismo como administrador de plataforma. Usá el mismo
+   usuario que ya tenés (el de tu propio negocio) o creá uno nuevo
+   solo para esto — como prefieras. Reemplazá el email por el tuyo:
+
+```sql
+update auth.users
+set raw_user_meta_data = raw_user_meta_data || jsonb_build_object('is_superadmin', true)
+where email = 'tu-email@ejemplo.com';
+```
+
+3. Entrá a `tu-sitio.vercel.app/?panel=plataforma` y logueate con ese
+   usuario. Ya podés crear y editar clientes desde ahí.
+
+**Lo único que este panel NO hace** (y no puede hacer, por seguridad):
+crear el usuario administrador de un cliente nuevo. Eso necesita
+permisos que nunca deben estar en el navegador. Por eso, cuando creás
+un cliente nuevo desde el panel, te muestra un cartel con el código SQL
+ya armado (con el id del cliente pegado) para que hagas ese único paso
+en Supabase — el mismo de siempre: crear el usuario en Authentication →
+Users, y correr ese SQL una vez.
+

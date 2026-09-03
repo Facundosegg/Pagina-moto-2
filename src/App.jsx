@@ -6,12 +6,15 @@ import { fetchMotos, subscribeToMotos } from "./motosApi.js";
 import { fetchClienteActual, applyTheme } from "./clienteApi.js";
 import { isSupabaseConfigured } from "./supabaseClient.js";
 import { useAdminSession } from "./useAdminSession.js";
+import { useSuperAdminSession } from "./useSuperAdminSession.js";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import CatalogAdminPanel from "./CatalogAdminPanel.jsx";
 import SupabaseNotConfiguredNotice from "./SupabaseNotConfiguredNotice.jsx";
 import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
+import SuperAdminLogin from "./SuperAdminLogin.jsx";
+import SuperAdminPanel from "./SuperAdminPanel.jsx";
 
 const PAGE_SIZE = 8;
 
@@ -310,7 +313,7 @@ function VenderMotoForm({ whatsappNumber }) {
 }
 
 /* ------------------------------------------------------------------------ */
-export default function App() {
+function ClienteSite() {
   const [filtros, setFiltros] = useState({ marca: "todas", estado: "todas", orden: "recientes", moneda: "todas" });
   const [visibles, setVisibles] = useState(PAGE_SIZE);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -725,4 +728,39 @@ export default function App() {
       </footer>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------------ */
+// Panel de plataforma (?panel=plataforma en la URL) — solo para vos, el
+// dueño de la plataforma. No usa el tema de ningún cliente: es siempre el
+// mismo panel neutro, se acceda desde el dominio que se acceda.
+function SuperAdminRoot() {
+  const { isSuperAdmin, checking, logout } = useSuperAdminSession();
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-[#0E0E12] flex items-center justify-center p-6 text-center">
+        <p className="text-[#F4F0E6] text-sm max-w-xs">Conectá Supabase primero (ver README) para usar este panel.</p>
+      </div>
+    );
+  }
+
+  if (checking) {
+    return <div className="min-h-screen bg-[#0E0E12]" />;
+  }
+
+  if (!isSuperAdmin) {
+    return <SuperAdminLogin onSuccess={() => setJustLoggedIn(true)} />;
+  }
+
+  return <SuperAdminPanel onLogout={logout} />;
+}
+
+export default function App() {
+  const isPlatformPanel =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("panel") === "plataforma";
+
+  if (isPlatformPanel) return <SuperAdminRoot />;
+  return <ClienteSite />;
 }
