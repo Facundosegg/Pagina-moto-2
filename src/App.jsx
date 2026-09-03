@@ -16,6 +16,14 @@ import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
 const PAGE_SIZE = 8;
 
 /* ------------------------------------------------------------------------ */
+function BrandLogo({ logoUrl, businessName, className = "w-6 h-6" }) {
+  const [error, setError] = useState(false);
+  if (logoUrl && !error) {
+    return <img src={logoUrl} alt={businessName} className={`${className} object-contain`} onError={() => setError(true)} />;
+  }
+  return <Bike className={`${className} text-[var(--c-signal)]`} />;
+}
+
 function RoadDivider() {
   return (
     <div className="relative h-8 overflow-hidden" aria-hidden="true">
@@ -356,6 +364,7 @@ export default function App() {
         instagram: cliente.instagram,
         facebook: cliente.facebook,
         mapsUrl: cliente.maps_url,
+        logoUrl: cliente.logo_url,
       }
     : DEFAULT_CONFIG;
 
@@ -432,7 +441,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-[var(--c-dark)] border-b border-[#2A2A30]">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2">
-            <Bike className="w-6 h-6 text-[var(--c-signal)]" />
+            <BrandLogo logoUrl={config.logoUrl} businessName={config.businessName} className="w-7 h-7" />
             <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
           </a>
           <nav className="hidden md:flex items-center gap-6">
@@ -613,7 +622,7 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-5 py-12 grid sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Bike className="w-5 h-5 text-[var(--c-signal)]" />
+              <BrandLogo logoUrl={config.logoUrl} businessName={config.businessName} className="w-6 h-6" />
               <span className="font-display text-lg tracking-wide text-[var(--c-paper2)] uppercase">{config.businessName}</span>
             </div>
             <p className="text-sm">La comunidad de compra y venta de motos del NEA.</p>

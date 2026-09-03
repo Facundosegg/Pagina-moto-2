@@ -305,6 +305,7 @@ create table clientes (
   color_rust text not null default '#C1440E',
   color_paper2 text not null default '#F4F0E6',
   color_ink text not null default '#17171C',
+  logo_url text,
   created_at timestamptz not null default now()
 );
 
@@ -478,4 +479,25 @@ update clientes set whatsapp_number = '549...' where slug = 'motos-juan';
 
 O cualquier otro campo (`nombre_negocio`, `color_signal`, etc.) de la
 misma forma.
+
+### Paso 5.4 — Logo por cliente (opcional)
+
+**Si ya diste de alta clientes antes de este paso**, agregales la
+columna una vez:
+
+```sql
+alter table clientes add column if not exists logo_url text;
+```
+
+Para poner o cambiar el logo de un cliente: subí la imagen a Supabase
+(Storage → el bucket `motos` que ya tenés creado, o uno nuevo si
+preferís separar) igual que subís una foto de moto, copiá el link
+público, y cargalo:
+
+```sql
+update clientes set logo_url = 'https://tu-link-de-la-imagen' where slug = 'motos-juan';
+```
+
+Si un cliente no tiene `logo_url` cargado, el sitio sigue mostrando el
+ícono de moto de siempre — no hace falta que todos tengan logo.
 
