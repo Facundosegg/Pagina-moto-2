@@ -11,6 +11,8 @@ function blankForm() {
     dominio: "",
     nombre_negocio: "",
     tagline: "",
+    hero_titulo: "",
+    hero_subtitulo: "",
     whatsapp_number: "",
     phone_display: "",
     address: "",
@@ -92,6 +94,8 @@ export default function SuperAdminPanel({ onLogout }) {
       dominio: cliente.dominio || "",
       nombre_negocio: cliente.nombre_negocio || "",
       tagline: cliente.tagline || "",
+      hero_titulo: cliente.hero_titulo || "",
+      hero_subtitulo: cliente.hero_subtitulo || "",
       whatsapp_number: cliente.whatsapp_number || "",
       phone_display: cliente.phone_display || "",
       address: cliente.address || "",
@@ -162,6 +166,33 @@ export default function SuperAdminPanel({ onLogout }) {
         <TextInput label="Instagram (link)" value={form.instagram} onChange={set("instagram")} />
         <TextInput label="Facebook (link)" value={form.facebook} onChange={set("facebook")} />
         <TextInput label="Google Maps (link)" value={form.maps_url} onChange={set("maps_url")} />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1">
+          <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">
+            Título grande de portada
+          </span>
+          <textarea
+            value={form.hero_titulo}
+            onChange={(e) => set("hero_titulo")(e.target.value)}
+            rows={2}
+            placeholder={"La ruta\nes tuya"}
+            className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E] resize-none"
+          />
+          <span className="text-xs text-[#8B8D8F]">Apretá Enter para el salto de línea (se ve grande, en dos renglones).</span>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">
+            Frase debajo del título
+          </span>
+          <textarea
+            value={form.hero_subtitulo}
+            onChange={(e) => set("hero_subtitulo")(e.target.value)}
+            rows={2}
+            className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E] resize-none"
+          />
+        </label>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">

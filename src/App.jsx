@@ -398,6 +398,8 @@ function ClienteSite() {
         mapsUrl: cliente.maps_url,
         logoUrl: cliente.logo_url,
         coverUrl: cliente.cover_url,
+        heroTitulo: cliente.hero_titulo,
+        heroSubtitulo: cliente.hero_subtitulo,
       }
     : DEFAULT_CONFIG;
 
@@ -539,13 +541,14 @@ function ClienteSite() {
         <div className="max-w-6xl mx-auto px-5 pt-16 pb-14 relative">
           <p className="font-mono text-xs tracking-[0.3em] text-[var(--c-signal)] uppercase mb-4">{config.tagline}</p>
           <h1 className="font-display text-5xl sm:text-6xl uppercase leading-[0.95] text-[var(--c-paper2)] max-w-2xl">
-            La ruta
-            <br />
-            es tuya
+            {(config.heroTitulo || "").split("\n").map((linea, i, arr) => (
+              <React.Fragment key={i}>
+                {linea}
+                {i < arr.length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </h1>
-          <p className="text-[#B9B6AC] mt-5 max-w-md">
-            0km y usadas seleccionadas, con financiación y permutas. Coordinamos todo por WhatsApp.
-          </p>
+          <p className="text-[#B9B6AC] mt-5 max-w-md">{config.heroSubtitulo}</p>
           <div className="flex flex-wrap gap-3 mt-7">
             <a href="#catalogo" className="bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-paper2)] transition-colors">
               Ver catálogo

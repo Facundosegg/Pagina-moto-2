@@ -292,6 +292,8 @@ create table clientes (
   dominio text unique,
   nombre_negocio text not null default 'Mi Negocio de Motos',
   tagline text not null default '',
+  hero_titulo text not null default '',
+  hero_subtitulo text not null default '',
   whatsapp_number text not null default '',
   phone_display text not null default '',
   address text not null default '',
@@ -580,4 +582,22 @@ un cliente nuevo desde el panel, te muestra un cartel con el código SQL
 ya armado (con el id del cliente pegado) para que hagas ese único paso
 en Supabase — el mismo de siempre: crear el usuario en Authentication →
 Users, y correr ese SQL una vez.
+
+### Paso 5.7 — Título grande y frase de portada editables (opcional)
+
+**Si ya habías creado la tabla `clientes` antes de este paso**,
+agregale estas dos columnas una vez:
+
+```sql
+alter table clientes add column if not exists hero_titulo text not null default '';
+alter table clientes add column if not exists hero_subtitulo text not null default '';
+```
+
+Son el título enorme de la sección de arriba de todo (ej. "La ruta /
+es tuya") y la frase chica debajo. Ya se editan desde el panel de
+plataforma (`?panel=plataforma`), sin SQL: en el título, apretar Enter
+hace el salto de línea entre el primer y el segundo renglón. Si un
+cliente los deja vacíos, no se rompe nada — el título simplemente no
+muestra texto ahí, así que conviene completarlos siempre que crees un
+cliente nuevo.
 

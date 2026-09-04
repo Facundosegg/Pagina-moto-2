@@ -16,6 +16,8 @@
 export const DEFAULT_CONFIG = {
   businessName: "RUTA NEA MOTOS (demo)",
   tagline: "Motos 0km y usadas en el Nordeste",
+  heroTitulo: "La ruta\nes tuya",
+  heroSubtitulo: "0km y usadas seleccionadas, con financiación y permutas. Coordinamos todo por WhatsApp.",
   whatsappNumber: "5493625000000", // Código de país (54) + 9 + código de área + número, SIN + ni espacios
   phoneDisplay: "362 500 0000",
   address: "Av. 9 de Julio 1234, Resistencia, Chaco",
