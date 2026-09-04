@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, Copy, Check, ExternalLink } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, ExternalLink, Link2, Loader2, UserPlus, CheckCircle2 } from "lucide-react";
 import { listClientes, insertCliente, updateClienteById, deleteClienteById } from "./superadminApi.js";
+import { createAdminUser, connectDomain } from "./platformApi.js";
 import ColorField from "./ColorField.jsx";
 import SingleImageUpload from "./SingleImageUpload.jsx";
 import TextInput from "./TextInput.jsx";
@@ -31,27 +32,6 @@ function blankForm() {
   };
 }
 
-function CopyableBlock({ text }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="relative">
-      <pre className="bg-black text-[#F5B700] text-xs p-3 pr-10 overflow-x-auto font-mono whitespace-pre-wrap">{text}</pre>
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard.writeText(text);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }}
-        className="absolute top-2 right-2 text-[#8B8D8F] hover:text-white"
-        title="Copiar"
-      >
-        {copied ? <Check className="w-4 h-4 text-[#F5B700]" /> : <Copy className="w-4 h-4" />}
-      </button>
-    </div>
-  );
-}
-
 export default function SuperAdminPanel({ onLogout }) {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +41,17 @@ export default function SuperAdminPanel({ onLogout }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [nuevoCreado, setNuevoCreado] = useState(null); // cliente recién creado, para mostrar instrucciones
+  const [nuevoCreado, setNuevoCreado] = useState(null); // cliente recién creado, para el paso de crear su admin
+
+  const [domainStatus, setDomainStatus] = useState(null); // null | "loading" | "ok" | "error"
+  const [domainMessage, setDomainMessage] = useState("");
+  const [domainVerification, setDomainVerification] = useState(null);
+
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [userError, setUserError] = useState("");
+  const [userCreated, setUserCreated] = useState(null);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -85,6 +75,13 @@ export default function SuperAdminPanel({ onLogout }) {
     setEditingId(null);
     setError("");
     setNuevoCreado(null);
+    setDomainStatus(null);
+    setDomainMessage("");
+    setDomainVerification(null);
+    setAdminEmail("");
+    setAdminPassword("");
+    setUserCreated(null);
+    setUserError("");
     setView("nuevo");
   }
 
@@ -114,6 +111,9 @@ export default function SuperAdminPanel({ onLogout }) {
     });
     setEditingId(cliente.id);
     setError("");
+    setDomainStatus(null);
+    setDomainMessage("");
+    setDomainVerification(null);
     setView("editar");
   }
 
@@ -152,11 +152,68 @@ export default function SuperAdminPanel({ onLogout }) {
     }
   }
 
+  async function handleConnectDomain() {
+    if (!form.dominio.trim()) return;
+    setDomainStatus("loading");
+    setDomainMessage("");
+    setDomainVerification(null);
+    try {
+      const result = await connectDomain({ domain: form.dominio.trim() });
+      setDomainStatus("ok");
+      setDomainVerification(result.verification);
+      setDomainMessage(
+        result.verified
+          ? "Dominio conectado y verificado. Ya debería funcionar."
+          : "Dominio agregado al proyecto. Como es un dominio propio, todavía falta cargar estos registros DNS donde lo compraste:"
+      );
+    } catch (err) {
+      setDomainStatus("error");
+      setDomainMessage(err.message || "No se pudo conectar el dominio.");
+    }
+  }
+
+  async function handleCreateAdminUser(e) {
+    e.preventDefault();
+    if (!adminEmail.trim() || adminPassword.length < 6) {
+      setUserError("Completá el email y una contraseña de al menos 6 caracteres.");
+      return;
+    }
+    setCreatingUser(true);
+    setUserError("");
+    try {
+      const created = await createAdminUser({ email: adminEmail.trim(), password: adminPassword, clienteId: nuevoCreado.id });
+      setUserCreated(created);
+    } catch (err) {
+      setUserError(err.message || "No se pudo crear el usuario.");
+    } finally {
+      setCreatingUser(false);
+    }
+  }
+
   const FormFields = (
     <>
       <div className="grid sm:grid-cols-2 gap-4">
         <TextInput label="Identificador (slug)" required value={form.slug} onChange={set("slug")} placeholder="motos-juan" />
-        <TextInput label="Dominio" value={form.dominio} onChange={set("dominio")} placeholder="motosjuan.vercel.app" />
+        <div className="flex flex-col gap-1">
+          <TextInput label="Dominio" value={form.dominio} onChange={set("dominio")} placeholder="motosjuan.vercel.app" />
+          <button
+            type="button"
+            onClick={handleConnectDomain}
+            disabled={!form.dominio.trim() || domainStatus === "loading"}
+            className="self-start inline-flex items-center gap-1.5 text-xs bg-[#17171C] text-white px-3 py-1.5 hover:bg-[#C1440E] transition-colors disabled:opacity-50"
+          >
+            {domainStatus === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+            Conectar este dominio en Vercel
+          </button>
+          {domainMessage && (
+            <p className={`text-xs ${domainStatus === "error" ? "text-[#C1440E]" : "text-[#5B5852]"}`}>{domainMessage}</p>
+          )}
+          {domainVerification && (
+            <pre className="bg-black text-[#F5B700] text-[10px] p-2 overflow-x-auto font-mono whitespace-pre-wrap">
+              {JSON.stringify(domainVerification, null, 2)}
+            </pre>
+          )}
+        </div>
         <TextInput label="Nombre del negocio" required value={form.nombre_negocio} onChange={set("nombre_negocio")} />
         <TextInput label="Frase corta (tagline)" value={form.tagline} onChange={set("tagline")} />
         <TextInput label="WhatsApp" value={form.whatsapp_number} onChange={set("whatsapp_number")} placeholder="5493794000000" />
@@ -217,48 +274,89 @@ export default function SuperAdminPanel({ onLogout }) {
   );
 
   if (view === "nuevo" && nuevoCreado) {
-    const sql = `update auth.users\nset raw_user_meta_data = raw_user_meta_data || jsonb_build_object('cliente_id', '${nuevoCreado.id}')\nwhere email = 'EMAIL-DEL-ADMIN-DE-ESTE-CLIENTE';`;
     return (
       <div className="min-h-screen bg-[#0E0E12] p-4 sm:p-8">
-        <div className="max-w-2xl mx-auto bg-[#EDE8DC] p-6 flex flex-col gap-4">
+        <div className="max-w-md mx-auto bg-[#EDE8DC] p-6 flex flex-col gap-4">
           <h2 className="font-display text-2xl uppercase tracking-wide text-[#17171C]">¡Cliente creado!</h2>
           <p className="text-sm text-[#5B5852]">
-            <strong>{nuevoCreado.nombre_negocio}</strong> ya está en la base de datos. Falta un último paso, a mano,
-            en Supabase, para que su usuario administrador pueda entrar a cargar motos — es por seguridad, no se
-            puede hacer desde acá.
+            <strong>{nuevoCreado.nombre_negocio}</strong> ya está en la base de datos. Ahora creale su usuario
+            administrador, para que pueda entrar a cargar motos.
           </p>
-          <ol className="text-sm text-[#5B5852] list-decimal list-inside flex flex-col gap-1">
-            <li>
-              En Supabase: <span className="font-mono">Authentication → Users → Add user → Create new user</span>{" "}
-              (con "Auto Confirm User" marcado). Usá el email y contraseña que le vayas a dar a este cliente.
-            </li>
-            <li>
-              Después, <span className="font-mono">SQL Editor → New query</span>, pegá esto (reemplazando el email)
-              y tocá Run:
-            </li>
-          </ol>
-          <CopyableBlock text={sql} />
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={() => {
-                setNuevoCreado(null);
-                setView("lista");
-              }}
-              className="bg-[#17171C] text-white px-4 py-2 text-sm hover:bg-[#C1440E] transition-colors"
-            >
-              Volver a la lista
-            </button>
-            {nuevoCreado.dominio && (
-              <a
-                href={`https://${nuevoCreado.dominio}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#C1440E]"
+
+          {userCreated ? (
+            <div className="flex flex-col gap-3">
+              <p className="inline-flex items-center gap-2 text-sm text-[#17171C]">
+                <CheckCircle2 className="w-5 h-5 text-[#2E7D32]" /> Usuario creado: <span className="font-mono">{userCreated.email}</span>
+              </p>
+              <p className="text-xs text-[#8B8D8F]">
+                Guardá la contraseña que pusiste — no se puede volver a ver desde acá. Pasásela a tu cliente por un
+                medio seguro.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setNuevoCreado(null);
+                    setView("lista");
+                  }}
+                  className="bg-[#17171C] text-white px-4 py-2 text-sm hover:bg-[#C1440E] transition-colors"
+                >
+                  Volver a la lista
+                </button>
+                {nuevoCreado.dominio && (
+                  <a
+                    href={`https://${nuevoCreado.dominio}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#C1440E]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> Ver su sitio
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleCreateAdminUser} className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Email del administrador</span>
+                <input
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E]"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Contraseña</span>
+                <input
+                  type="text"
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 font-mono focus:outline-none focus:border-[#C1440E]"
+                />
+              </label>
+              {userError && <p className="text-sm text-[#C1440E]">{userError}</p>}
+              <button
+                type="submit"
+                disabled={creatingUser}
+                className="self-start inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-white transition-colors disabled:opacity-50"
               >
-                <ExternalLink className="w-3.5 h-3.5" /> Ver su sitio
-              </a>
-            )}
-          </div>
+                {creatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                {creatingUser ? "Creando..." : "Crear usuario administrador"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNuevoCreado(null);
+                  setView("lista");
+                }}
+                className="self-start text-xs text-[#8B8D8F] hover:text-[#17171C]"
+              >
+                Saltear por ahora, lo hago después
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );

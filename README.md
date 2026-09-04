@@ -601,3 +601,67 @@ cliente los deja vacíos, no se rompe nada — el título simplemente no
 muestra texto ahí, así que conviene completarlos siempre que crees un
 cliente nuevo.
 
+### Paso 5.8 — Automatizar todo: crear usuarios y conectar dominios sin salir del panel
+
+Con esto, cuando creás un cliente nuevo desde `?panel=plataforma`,
+podés crearle el usuario administrador ahí mismo con un formulario
+(en vez de ir a Supabase a mano), y conectar su dominio a Vercel con
+un botón (en vez de ir a Vercel a mano).
+
+Esto usa dos funciones que corren en el servidor de Vercel — no en tu
+computadora, no hace falta tenerla prendida para nada, se ejecutan
+solas en la nube en el instante que las usás. Necesitan dos claves
+privadas, que se guardan en Vercel y nunca llegan al navegador.
+
+**1. La clave "Secret" de Supabase** (ya existe, no hay que crear
+nada). En Supabase: **Project Settings → API Keys → Secret keys**,
+copiá la que dice `sb_secret_...`.
+
+**2. Un Access Token de tu cuenta de Vercel** (se genera, no es una
+cuenta nueva). En Vercel: tocá tu foto de perfil (arriba a la derecha)
+→ **Settings → Tokens → Create Token**. Ponele un nombre (ej.
+"plataforma-motos"), sin fecha de expiración si querés que no se
+venza, y **Create**. Te muestra el código una sola vez — copialo ya.
+
+**3. El ID de tu proyecto en Vercel.** Dentro del proyecto: **Settings
+→ General**, bajá hasta "Project ID" y copialo.
+
+**4. (Solo si tu cuenta de Vercel es de tipo equipo/organización, no
+personal)** el Team ID, en esa misma pantalla o en la URL del
+dashboard.
+
+Con esos datos, en Vercel → tu proyecto → **Settings → Environment
+Variables**, agregá (para el ambiente Production):
+
+| Key | Value |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | la clave `sb_secret_...` de Supabase |
+| `VERCEL_API_TOKEN` | el token que generaste en Vercel |
+| `VERCEL_PROJECT_ID` | el Project ID de tu proyecto |
+| `VERCEL_TEAM_ID` | (opcional, solo si aplica) |
+
+Ninguna de estas cuatro empieza con `VITE_` — a propósito, así Vite
+nunca las incluye en el código que baja al navegador. Solo las puede
+leer el código que corre del lado del servidor.
+
+Subí el código actualizado a GitHub como siempre (esta vez incluye una
+carpeta nueva `api/`, con las dos funciones — se sube igual que todo lo
+demás, sin ningún paso extra) y esperá el redeploy.
+
+**Cómo se usa después de esto:**
+
+- Al crear un cliente nuevo, en vez de instrucciones de SQL, te aparece
+  un formulario para poner el email y la contraseña del administrador
+  y un botón **"Crear usuario administrador"**. Un clic y ya puede
+  entrar a cargar motos.
+- En el formulario de cualquier cliente (nuevo o editando uno), al
+  lado del campo Dominio hay un botón **"Conectar este dominio en
+  Vercel"**. Si es un subdominio gratis (`algo.vercel.app`), queda
+  conectado y verificado al instante. Si es un dominio propio comprado
+  en otro lado, Vercel te va a devolver qué registros DNS tenés que
+  cargar donde lo compraste — eso sí sigue siendo un paso aparte,
+  porque el DNS lo controla quien vendió el dominio, no nosotros.
+
+Si en algún momento falta alguna de las cuatro variables, esos botones
+simplemente muestran un error explicando qué falta — el resto del
+panel (colores, textos, fotos) sigue funcionando igual sin ellas.
