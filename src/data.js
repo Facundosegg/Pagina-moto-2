@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG = {
   tagline: "Motos 0km y usadas en el Nordeste",
   heroTitulo: "La ruta\nes tuya",
   heroSubtitulo: "0km y usadas seleccionadas, con financiación y permutas. Coordinamos todo por WhatsApp.",
+  layout: "clasico", // "clasico" | "centrado" | "lista"
   whatsappNumber: "5493625000000", // Código de país (54) + 9 + código de área + número, SIN + ni espacios
   phoneDisplay: "362 500 0000",
   address: "Av. 9 de Julio 1234, Resistencia, Chaco",
@@ -31,7 +32,32 @@ export const DEFAULT_CONFIG = {
 // MARCAS — las que aparecen en los filtros y en el formulario de "vendé la tuya".
 // Por ahora es la misma lista para todos los clientes.
 // ------------------------------------------------------------------------------
-export const MARCAS = ["APRILIA", "BAJAJ", "BENELLI", "CORVEN", "HONDA", "KAWASAKI", "KTM", "MOTOMEL", "VOGE", "YAMAHA"];
+export const MARCAS = [
+  "APRILIA",
+  "BAJAJ",
+  "BENELLI",
+  "BMW",
+  "CFMOTO",
+  "CORVEN",
+  "DUCATI",
+  "GILERA",
+  "HONDA",
+  "HUSQVARNA",
+  "KAWASAKI",
+  "KELLER",
+  "KTM",
+  "KYMCO",
+  "MONDIAL",
+  "MOTOMEL",
+  "ROYAL ENFIELD",
+  "RVM",
+  "SIAM",
+  "SUZUKI",
+  "TVS",
+  "VOGE",
+  "YAMAHA",
+  "ZANELLA",
+];
 
 // ------------------------------------------------------------------------------
 // DEFAULT_MOTOS — catálogo de EJEMPLO. Se muestra solo mientras todavía no

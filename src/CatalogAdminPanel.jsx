@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { PackagePlus, X, Plus, Save, Pencil, Trash2, LogOut } from "lucide-react";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
+import NumberInput from "./NumberInput.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import { MARCAS } from "./data.js";
 import { formatMoney } from "./format.js";
@@ -150,8 +151,8 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
                 options={[{ value: "0km", label: "0km" }, { value: "usado", label: "Usada" }]}
               />
               <TextInput label="Cilindrada (cc)" value={form.cc} onChange={set("cc")} placeholder="150" />
-              <TextInput label="Kilómetros" value={form.km} onChange={set("km")} placeholder="0" />
-              <TextInput label="Precio" required value={form.precio} onChange={set("precio")} placeholder="2600000" />
+              <NumberInput label="Kilómetros" value={form.km} onChange={set("km")} placeholder="0" />
+              <NumberInput label="Precio" required value={form.precio} onChange={set("precio")} placeholder="2.600.000" />
               <FieldSelect label="Moneda" value={form.moneda} onChange={set("moneda")} options={[{ value: "ARS", label: "ARS" }, { value: "USD", label: "USD" }]} />
               <FieldSelect
                 label="Etiqueta"

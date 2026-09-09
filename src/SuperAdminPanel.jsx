@@ -14,6 +14,7 @@ function blankForm() {
     tagline: "",
     hero_titulo: "",
     hero_subtitulo: "",
+    layout: "clasico",
     whatsapp_number: "",
     phone_display: "",
     address: "",
@@ -93,6 +94,7 @@ export default function SuperAdminPanel({ onLogout }) {
       tagline: cliente.tagline || "",
       hero_titulo: cliente.hero_titulo || "",
       hero_subtitulo: cliente.hero_subtitulo || "",
+      layout: cliente.layout || "clasico",
       whatsapp_number: cliente.whatsapp_number || "",
       phone_display: cliente.phone_display || "",
       address: cliente.address || "",
@@ -223,6 +225,29 @@ export default function SuperAdminPanel({ onLogout }) {
         <TextInput label="Instagram (link)" value={form.instagram} onChange={set("instagram")} />
         <TextInput label="Facebook (link)" value={form.facebook} onChange={set("facebook")} />
         <TextInput label="Google Maps (link)" value={form.maps_url} onChange={set("maps_url")} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Estilo de diseño</span>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {[
+            { value: "clasico", title: "Clásico", desc: "Título a la izquierda, catálogo en tarjetas grandes (4 por fila)." },
+            { value: "centrado", title: "Centrado", desc: "Todo el texto de portada centrado, catálogo en tarjetas (3 por fila)." },
+            { value: "lista", title: "Lista", desc: "Catálogo en filas horizontales, una moto debajo de la otra." },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => set("layout")(opt.value)}
+              className={`text-left border p-3 transition-colors ${
+                form.layout === opt.value ? "border-[#C1440E] bg-[#F4F0E6]" : "border-[#D8D2C0] bg-white hover:border-[#8B8D8F]"
+              }`}
+            >
+              <p className="font-display text-sm uppercase tracking-wide text-[#17171C]">{opt.title}</p>
+              <p className="text-xs text-[#8B8D8F] mt-1">{opt.desc}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">

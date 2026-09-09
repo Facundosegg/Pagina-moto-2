@@ -161,6 +161,61 @@ function MotoCard({ moto, whatsappNumber }) {
   );
 }
 
+function MotoListRow({ moto, whatsappNumber }) {
+  const [imgError, setImgError] = useState(false);
+  const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
+  const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 bg-[#F4F0E6] border border-[#D8D2C0] p-3">
+      <div className="relative w-full sm:w-40 h-32 shrink-0">
+        {fotos.length > 0 && !imgError ? (
+          <img
+            src={fotos[0]}
+            alt={`${moto.marca} ${moto.modelo}`}
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <PlaceholderArt marca={moto.marca} estado={moto.estado} />
+        )}
+        {moto.destacado && (
+          <span
+            className={`absolute top-1.5 left-1.5 font-mono text-[9px] tracking-widest px-1.5 py-0.5 ${
+              moto.destacado === "RESERVADA" ? "bg-[#C1440E] text-[#F4F0E6]" : "bg-[#F5B700] text-[#15151A]"
+            }`}
+          >
+            {moto.destacado}
+          </span>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 justify-between min-w-0">
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] tracking-widest text-[#8B8D8F] uppercase">{moto.marca}</p>
+          <h3 className="font-display text-lg uppercase tracking-wide text-[#17171C] leading-tight truncate">{moto.modelo}</h3>
+          <p className="font-mono text-xs text-[#8B8D8F] mt-1">
+            {moto.anio || "S/D"} · {moto.cc}cc · {moto.estado === "0km" ? "0" : new Intl.NumberFormat("es-AR").format(moto.km)} km
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="bg-[#15151A] text-[var(--c-signal)] font-mono text-base px-3 py-1.5 tabular-nums">
+            {formatMoney(moto.precio, moto.moneda)}
+          </div>
+          <a
+            href={waLink(whatsappNumber, msg)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#17171C] text-[#F4F0E6] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors whitespace-nowrap"
+          >
+            <MessageCircle className="w-4 h-4" /> Consultar
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PedirMotoForm({ whatsappNumber, motos }) {
   const [form, setForm] = useState({
     nombre: "",
@@ -400,6 +455,7 @@ function ClienteSite() {
         coverUrl: cliente.cover_url,
         heroTitulo: cliente.hero_titulo,
         heroSubtitulo: cliente.hero_subtitulo,
+        layout: cliente.layout || "clasico",
       }
     : DEFAULT_CONFIG;
 
@@ -538,7 +594,11 @@ function ClienteSite() {
             style={{ backgroundImage: "repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 22px)" }}
           />
         )}
-        <div className="max-w-6xl mx-auto px-5 pt-16 pb-14 relative">
+        <div
+          className={`max-w-6xl mx-auto px-5 pt-16 pb-14 relative ${
+            config.layout === "centrado" ? "text-center flex flex-col items-center" : ""
+          }`}
+        >
           <p className="font-mono text-xs tracking-[0.3em] text-[var(--c-signal)] uppercase mb-4">{config.tagline}</p>
           <h1 className="font-display text-5xl sm:text-6xl uppercase leading-[0.95] text-[var(--c-paper2)] max-w-2xl">
             {(config.heroTitulo || "").split("\n").map((linea, i, arr) => (
@@ -548,8 +608,8 @@ function ClienteSite() {
               </React.Fragment>
             ))}
           </h1>
-          <p className="text-[#B9B6AC] mt-5 max-w-md">{config.heroSubtitulo}</p>
-          <div className="flex flex-wrap gap-3 mt-7">
+          <p className={`text-[#B9B6AC] mt-5 max-w-md ${config.layout === "centrado" ? "mx-auto" : ""}`}>{config.heroSubtitulo}</p>
+          <div className={`flex flex-wrap gap-3 mt-7 ${config.layout === "centrado" ? "justify-center" : ""}`}>
             <a href="#catalogo" className="bg-[var(--c-signal)] text-[var(--c-dark)] font-medium px-5 py-2.5 hover:bg-[var(--c-paper2)] transition-colors">
               Ver catálogo
             </a>
@@ -630,8 +690,14 @@ function ClienteSite() {
             <Search className="w-8 h-8 text-[#8B8D8F]" />
             <p className="text-[#5B5852]">No hay unidades con esos filtros. Probá cambiar la marca o el estado.</p>
           </div>
+        ) : config.layout === "lista" ? (
+          <div className="flex flex-col gap-4">
+            {mostrar.map((moto) => (
+              <MotoListRow key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} />
+            ))}
+          </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className={`grid sm:grid-cols-2 gap-5 ${config.layout === "centrado" ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
             {mostrar.map((moto) => (
               <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} />
             ))}

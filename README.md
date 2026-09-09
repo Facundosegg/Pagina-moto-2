@@ -665,3 +665,27 @@ demás, sin ningún paso extra) y esperá el redeploy.
 Si en algún momento falta alguna de las cuatro variables, esos botones
 simplemente muestran un error explicando qué falta — el resto del
 panel (colores, textos, fotos) sigue funcionando igual sin ellas.
+
+### Paso 5.9 — Estilos de diseño distintos por cliente (opcional)
+
+**Si ya habías creado la tabla `clientes` antes de este paso**,
+agregale esta columna una vez:
+
+```sql
+alter table clientes add column if not exists layout text not null default 'clasico';
+```
+
+Con esto, en el panel de plataforma (`?panel=plataforma`), al editar
+un cliente aparecen tres opciones de **"Estilo de diseño"**, no solo
+colores — cambian de verdad la estructura de la página:
+
+- **Clásico**: título a la izquierda en la portada, catálogo en
+  tarjetas grandes (4 por fila).
+- **Centrado**: todo el texto de la portada centrado, catálogo en
+  tarjetas (3 por fila, más grandes).
+- **Lista**: el catálogo se muestra en filas horizontales, una moto
+  debajo de la otra, en vez de tarjetas.
+
+Así dos clientes con exactamente los mismos colores todavía se ven
+notoriamente distintos entre sí. Si un cliente no tiene `layout`
+cargado, usa "Clásico" por defecto — no se rompe nada.
