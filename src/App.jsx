@@ -63,19 +63,23 @@ function PlaceholderArt({ marca, estado }) {
   );
 }
 
-function MotoCard({ moto, whatsappNumber }) {
+function MotoCard({ moto, whatsappNumber, onAbrirDetalle }) {
   const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
   const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
 
-  function go(delta) {
+  function go(delta, e) {
+    e.stopPropagation();
     setImgError(false);
     setIndex((i) => (i + delta + fotos.length) % fotos.length);
   }
 
   return (
-    <div className="group bg-[var(--c-paper2)] border border-[#D8D2C0] flex flex-col">
+    <div
+      onClick={() => onAbrirDetalle(moto)}
+      className="group bg-[var(--c-paper2)] border border-[#D8D2C0] flex flex-col cursor-pointer hover:border-[var(--c-rust)] transition-colors"
+    >
       <div className="relative">
         {fotos.length > 0 && !imgError ? (
           <img
@@ -90,14 +94,14 @@ function MotoCard({ moto, whatsappNumber }) {
         {fotos.length > 1 && !imgError && (
           <>
             <button
-              onClick={() => go(-1)}
+              onClick={(e) => go(-1, e)}
               aria-label="Foto anterior"
               className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white w-6 h-6 flex items-center justify-center text-sm"
             >
               ‹
             </button>
             <button
-              onClick={() => go(1)}
+              onClick={(e) => go(1, e)}
               aria-label="Foto siguiente"
               className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white w-6 h-6 flex items-center justify-center text-sm"
             >
@@ -152,6 +156,7 @@ function MotoCard({ moto, whatsappNumber }) {
             href={waLink(whatsappNumber, msg)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1.5 bg-[var(--c-ink)] text-[var(--c-paper2)] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Consultar
@@ -162,13 +167,16 @@ function MotoCard({ moto, whatsappNumber }) {
   );
 }
 
-function MotoListRow({ moto, whatsappNumber }) {
+function MotoListRow({ moto, whatsappNumber, onAbrirDetalle }) {
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
   const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 bg-[#F4F0E6] border border-[#D8D2C0] p-3">
+    <div
+      onClick={() => onAbrirDetalle(moto)}
+      className="flex flex-col sm:flex-row gap-4 bg-[#F4F0E6] border border-[#D8D2C0] p-3 cursor-pointer hover:border-[var(--c-rust)] transition-colors"
+    >
       <div className="relative w-full sm:w-40 h-32 shrink-0">
         {fotos.length > 0 && !imgError ? (
           <img
@@ -207,10 +215,152 @@ function MotoListRow({ moto, whatsappNumber }) {
             href={waLink(whatsappNumber, msg)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1.5 bg-[#17171C] text-[#F4F0E6] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors whitespace-nowrap"
           >
             <MessageCircle className="w-4 h-4" /> Consultar
           </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MotoDetalleModal({ moto, whatsappNumber, onClose }) {
+  const [index, setIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
+  const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
+  const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
+
+  function go(delta) {
+    setImgError(false);
+    setIndex((i) => (i + delta + fotos.length) % fotos.length);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        className="bg-[var(--c-paper2)] w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative bg-[#0E0E12]">
+          {fotos.length > 0 && !imgError ? (
+            <img
+              src={fotos[index]}
+              alt={`${moto.marca} ${moto.modelo}`}
+              className="w-full h-64 sm:h-96 object-contain"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="h-64 sm:h-96 flex items-center justify-center">
+              <PlaceholderArt marca={moto.marca} estado={moto.estado} />
+            </div>
+          )}
+
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="absolute top-3 right-3 bg-black/60 text-white w-8 h-8 flex items-center justify-center hover:bg-[var(--c-rust)] transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {fotos.length > 1 && !imgError && (
+            <>
+              <button
+                onClick={() => go(-1)}
+                aria-label="Foto anterior"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white w-9 h-9 flex items-center justify-center text-xl"
+              >
+                ‹
+              </button>
+              <button
+                onClick={() => go(1)}
+                aria-label="Foto siguiente"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white w-9 h-9 flex items-center justify-center text-xl"
+              >
+                ›
+              </button>
+              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                {fotos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setImgError(false);
+                      setIndex(i);
+                    }}
+                    aria-label={`Ver foto ${i + 1}`}
+                    className={`w-2 h-2 rounded-full ${i === index ? "bg-[var(--c-signal)]" : "bg-white/50"}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {moto.destacado && (
+            <span
+              className={`absolute top-3 left-3 font-mono text-[10px] tracking-widest px-2 py-1 ${
+                moto.destacado === "RESERVADA" ? "bg-[var(--c-rust)] text-[var(--c-paper2)]" : "bg-[var(--c-signal)] text-[var(--c-dark)]"
+              }`}
+            >
+              {moto.destacado}
+            </span>
+          )}
+        </div>
+
+        {fotos.length > 1 && (
+          <div className="flex gap-2 p-3 overflow-x-auto bg-[#0E0E12] border-t border-black/30">
+            {fotos.map((url, i) => (
+              <button
+                key={url + i}
+                onClick={() => {
+                  setImgError(false);
+                  setIndex(i);
+                }}
+                className={`shrink-0 w-16 h-16 border-2 ${i === index ? "border-[var(--c-signal)]" : "border-transparent"}`}
+              >
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="p-6 flex flex-col gap-4">
+          <div>
+            <p className="font-mono text-xs tracking-widest text-[#8B8D8F] uppercase">{moto.marca}</p>
+            <h2 className="font-display text-3xl uppercase tracking-wide text-[var(--c-ink)] leading-tight">{moto.modelo}</h2>
+          </div>
+
+          <div className="grid grid-cols-3 gap-px bg-[#D8D2C0] font-mono text-center">
+            <div className="bg-white py-3">
+              <div className="text-[10px] text-[#8B8D8F] tracking-widest">AÑO</div>
+              <div className="text-base text-[var(--c-ink)] tabular-nums">{moto.anio || "S/D"}</div>
+            </div>
+            <div className="bg-white py-3">
+              <div className="text-[10px] text-[#8B8D8F] tracking-widest">CC</div>
+              <div className="text-base text-[var(--c-ink)] tabular-nums">{moto.cc}</div>
+            </div>
+            <div className="bg-white py-3">
+              <div className="text-[10px] text-[#8B8D8F] tracking-widest">KM</div>
+              <div className="text-base text-[var(--c-ink)] tabular-nums">
+                {moto.estado === "0km" ? "0" : new Intl.NumberFormat("es-AR").format(moto.km)}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="bg-[var(--c-dark)] text-[var(--c-signal)] font-mono text-2xl px-4 py-2 tabular-nums whitespace-nowrap">
+              {formatMoney(moto.precio, moto.moneda)}
+            </div>
+            <a
+              href={waLink(whatsappNumber, msg)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[var(--c-ink)] text-[var(--c-paper2)] font-medium px-5 py-2.5 hover:bg-[var(--c-rust)] transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" /> Consultar por esta moto
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -395,6 +545,7 @@ function ClienteSite() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
+  const [motoDetalle, setMotoDetalle] = useState(null);
 
   const { isAdmin, session, logout } = useAdminSession(cliente?.id);
 
@@ -539,6 +690,9 @@ function ClienteSite() {
             setCatalogOpen(false);
           }}
         />
+      )}
+      {motoDetalle && (
+        <MotoDetalleModal moto={motoDetalle} whatsappNumber={config.whatsappNumber} onClose={() => setMotoDetalle(null)} />
       )}
 
       {/* HEADER */}
@@ -706,13 +860,13 @@ function ClienteSite() {
         ) : config.layout === "lista" ? (
           <div className="flex flex-col gap-4">
             {mostrar.map((moto) => (
-              <MotoListRow key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} />
+              <MotoListRow key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} onAbrirDetalle={setMotoDetalle} />
             ))}
           </div>
         ) : (
           <div className={`grid sm:grid-cols-2 gap-5 ${config.layout === "centrado" ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
             {mostrar.map((moto) => (
-              <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} />
+              <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} onAbrirDetalle={setMotoDetalle} />
             ))}
           </div>
         )}
