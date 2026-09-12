@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, ExternalLink, Link2, Loader2, UserPlus, CheckCircle2 } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, ExternalLink, Link2, Loader2 } from "lucide-react";
 import { listClientes, insertCliente, updateClienteById, deleteClienteById } from "./superadminApi.js";
-import { createAdminUser, connectDomain } from "./platformApi.js";
+import { connectDomain } from "./platformApi.js";
 import ColorField from "./ColorField.jsx";
 import SingleImageUpload from "./SingleImageUpload.jsx";
 import TextInput from "./TextInput.jsx";
+import AdminUsersManager from "./AdminUsersManager.jsx";
 
 function blankForm() {
   return {
@@ -48,12 +49,6 @@ export default function SuperAdminPanel({ onLogout }) {
   const [domainMessage, setDomainMessage] = useState("");
   const [domainVerification, setDomainVerification] = useState(null);
 
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [creatingUser, setCreatingUser] = useState(false);
-  const [userError, setUserError] = useState("");
-  const [userCreated, setUserCreated] = useState(null);
-
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
   async function reload() {
@@ -79,10 +74,6 @@ export default function SuperAdminPanel({ onLogout }) {
     setDomainStatus(null);
     setDomainMessage("");
     setDomainVerification(null);
-    setAdminEmail("");
-    setAdminPassword("");
-    setUserCreated(null);
-    setUserError("");
     setView("nuevo");
   }
 
@@ -171,24 +162,6 @@ export default function SuperAdminPanel({ onLogout }) {
     } catch (err) {
       setDomainStatus("error");
       setDomainMessage(err.message || "No se pudo conectar el dominio.");
-    }
-  }
-
-  async function handleCreateAdminUser(e) {
-    e.preventDefault();
-    if (!adminEmail.trim() || adminPassword.length < 6) {
-      setUserError("Completá el email y una contraseña de al menos 6 caracteres.");
-      return;
-    }
-    setCreatingUser(true);
-    setUserError("");
-    try {
-      const created = await createAdminUser({ email: adminEmail.trim(), password: adminPassword, clienteId: nuevoCreado.id });
-      setUserCreated(created);
-    } catch (err) {
-      setUserError(err.message || "No se pudo crear el usuario.");
-    } finally {
-      setCreatingUser(false);
     }
   }
 
@@ -308,80 +281,29 @@ export default function SuperAdminPanel({ onLogout }) {
             administrador, para que pueda entrar a cargar motos.
           </p>
 
-          {userCreated ? (
-            <div className="flex flex-col gap-3">
-              <p className="inline-flex items-center gap-2 text-sm text-[#17171C]">
-                <CheckCircle2 className="w-5 h-5 text-[#2E7D32]" /> Usuario creado: <span className="font-mono">{userCreated.email}</span>
-              </p>
-              <p className="text-xs text-[#8B8D8F]">
-                Guardá la contraseña que pusiste — no se puede volver a ver desde acá. Pasásela a tu cliente por un
-                medio seguro.
-              </p>
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    setNuevoCreado(null);
-                    setView("lista");
-                  }}
-                  className="bg-[#17171C] text-white px-4 py-2 text-sm hover:bg-[#C1440E] transition-colors"
-                >
-                  Volver a la lista
-                </button>
-                {nuevoCreado.dominio && (
-                  <a
-                    href={`https://${nuevoCreado.dominio}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#C1440E]"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> Ver su sitio
-                  </a>
-                )}
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleCreateAdminUser} className="flex flex-col gap-3">
-              <label className="flex flex-col gap-1">
-                <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Email del administrador</span>
-                <input
-                  type="email"
-                  required
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E]"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Contraseña</span>
-                <input
-                  type="text"
-                  required
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 font-mono focus:outline-none focus:border-[#C1440E]"
-                />
-              </label>
-              {userError && <p className="text-sm text-[#C1440E]">{userError}</p>}
-              <button
-                type="submit"
-                disabled={creatingUser}
-                className="self-start inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-white transition-colors disabled:opacity-50"
+          <AdminUsersManager clienteId={nuevoCreado.id} />
+
+          <div className="flex items-center gap-3 pt-2 border-t border-[#D8D2C0] mt-1">
+            <button
+              onClick={() => {
+                setNuevoCreado(null);
+                setView("lista");
+              }}
+              className="bg-[#17171C] text-white px-4 py-2 text-sm hover:bg-[#C1440E] transition-colors mt-3"
+            >
+              Volver a la lista
+            </button>
+            {nuevoCreado.dominio && (
+              <a
+                href={`https://${nuevoCreado.dominio}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#C1440E] mt-3"
               >
-                {creatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                {creatingUser ? "Creando..." : "Crear usuario administrador"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setNuevoCreado(null);
-                  setView("lista");
-                }}
-                className="self-start text-xs text-[#8B8D8F] hover:text-[#17171C]"
-              >
-                Saltear por ahora, lo hago después
-              </button>
-            </form>
-          )}
+                <ExternalLink className="w-3.5 h-3.5" /> Ver su sitio
+              </a>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -390,28 +312,36 @@ export default function SuperAdminPanel({ onLogout }) {
   if (view === "nuevo" || view === "editar") {
     return (
       <div className="min-h-screen bg-[#0E0E12] p-4 sm:p-8">
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-[#EDE8DC] p-6 flex flex-col gap-5">
-          <div className="flex items-center justify-between">
-            <button type="button" onClick={() => setView("lista")} className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#17171C]">
-              <ArrowLeft className="w-4 h-4" /> Volver
+        <div className="max-w-2xl mx-auto flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="bg-[#EDE8DC] p-6 flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => setView("lista")} className="inline-flex items-center gap-1.5 text-sm text-[#5B5852] hover:text-[#17171C]">
+                <ArrowLeft className="w-4 h-4" /> Volver
+              </button>
+              <h2 className="font-display text-xl uppercase tracking-wide text-[#17171C]">
+                {view === "nuevo" ? "Nuevo cliente" : "Editar cliente"}
+              </h2>
+            </div>
+
+            {FormFields}
+
+            {error && <p className="text-sm text-[#C1440E]">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="self-start inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-white transition-colors disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" /> {saving ? "Guardando..." : "Guardar"}
             </button>
-            <h2 className="font-display text-xl uppercase tracking-wide text-[#17171C]">
-              {view === "nuevo" ? "Nuevo cliente" : "Editar cliente"}
-            </h2>
-          </div>
+          </form>
 
-          {FormFields}
-
-          {error && <p className="text-sm text-[#C1440E]">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="self-start inline-flex items-center gap-2 bg-[#F5B700] text-[#15151A] font-medium px-5 py-2.5 hover:bg-[#17171C] hover:text-white transition-colors disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" /> {saving ? "Guardando..." : "Guardar"}
-          </button>
-        </form>
+          {view === "editar" && (
+            <div className="bg-[#EDE8DC] p-6">
+              <AdminUsersManager clienteId={editingId} />
+            </div>
+          )}
+        </div>
       </div>
     );
   }

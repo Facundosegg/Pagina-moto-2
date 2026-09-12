@@ -645,15 +645,22 @@ nunca las incluye en el código que baja al navegador. Solo las puede
 leer el código que corre del lado del servidor.
 
 Subí el código actualizado a GitHub como siempre (esta vez incluye una
-carpeta nueva `api/`, con las dos funciones — se sube igual que todo lo
+carpeta nueva `api/`, con las funciones — se sube igual que todo lo
 demás, sin ningún paso extra) y esperá el redeploy.
 
 **Cómo se usa después de esto:**
 
 - Al crear un cliente nuevo, en vez de instrucciones de SQL, te aparece
-  un formulario para poner el email y la contraseña del administrador
-  y un botón **"Crear usuario administrador"**. Un clic y ya puede
-  entrar a cargar motos.
+  una sección **"Usuarios administradores"** con un formulario chico
+  (email + contraseña) y un botón **"Agregar usuario"**. Un clic y ya
+  puede entrar a cargar motos.
+- Esa misma sección de **"Usuarios administradores"** también aparece
+  cuando editás cualquier cliente ya existente — no solo al crearlo.
+  Ahí podés ver la lista de usuarios que tiene ese cliente, agregarle
+  uno nuevo (por ejemplo, si tiene dos personas atendiendo el
+  WhatsApp y cada una quiere su propio login), o sacarle el acceso a
+  uno con **"Quitar acceso"** (por ejemplo, si dejó de trabajar con
+  vos, o simplemente para resetearle el usuario creando uno nuevo).
 - En el formulario de cualquier cliente (nuevo o editando uno), al
   lado del campo Dominio hay un botón **"Conectar este dominio en
   Vercel"**. Si es un subdominio gratis (`algo.vercel.app`), queda

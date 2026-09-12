@@ -22,6 +22,14 @@ export function createAdminUser({ email, password, clienteId }) {
   return callFunction("/api/create-admin-user", { email, password, clienteId });
 }
 
+export function listAdminUsers({ clienteId }) {
+  return callFunction("/api/list-admin-users", { clienteId });
+}
+
+export function deleteAdminUser({ userId }) {
+  return callFunction("/api/delete-admin-user", { userId });
+}
+
 export function connectDomain({ domain }) {
   return callFunction("/api/add-domain", { domain });
 }
