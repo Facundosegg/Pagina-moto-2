@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { PackagePlus, X, Plus, Save, Pencil, Trash2, LogOut } from "lucide-react";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
@@ -29,6 +29,7 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const scrollRef = useRef(null);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -47,6 +48,7 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
       fotos: moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [],
     });
     setError("");
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function startNew() {
@@ -135,7 +137,7 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-y-auto">
+        <div ref={scrollRef} className="max-h-[75vh] overflow-y-auto">
           <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4 border-b border-[#D8D2C0]">
             <p className="text-sm text-[#5B5852]">
               {editingId != null ? "Editando una unidad del catálogo." : "Cargá una unidad nueva. Se suma arriba de todo del catálogo y ya se ve en el sitio para cualquiera que entre."}

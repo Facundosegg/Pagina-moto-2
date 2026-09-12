@@ -31,7 +31,7 @@ export default function PhotoUpload({ value, onChange, uploadFn = uploadMotoImag
   }
 
   function handleFileChange(e) {
-    const files = e.target.files;
+    const files = Array.from(e.target.files || []);
     e.target.value = ""; // permite volver a elegir los mismos archivos si hace falta
     handleFiles(files);
   }

@@ -17,7 +17,7 @@ import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
 import SuperAdminLogin from "./SuperAdminLogin.jsx";
 import SuperAdminPanel from "./SuperAdminPanel.jsx";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 
 /* ------------------------------------------------------------------------ */
 function BrandLogo({ logoUrl, businessName, iconClassName = "w-6 h-6", imgClassName = "h-9 w-auto max-w-[150px]" }) {
