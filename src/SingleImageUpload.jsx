@@ -6,10 +6,9 @@ export default function SingleImageUpload({ label, value, onChange, hint }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
 
-  async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  async function handleFile(file) {
     if (!file) return;
     setUploading(true);
     setError("");
@@ -23,6 +22,29 @@ export default function SingleImageUpload({ label, value, onChange, hint }) {
     }
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    handleFile(file);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    if (uploading) return;
+    handleFile(e.dataTransfer.files?.[0]);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (!dragging) setDragging(true);
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    setDragging(false);
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">{label}</span>
@@ -30,7 +52,14 @@ export default function SingleImageUpload({ label, value, onChange, hint }) {
       {value && (
         <img src={value} alt={label} className="h-16 w-auto max-w-[220px] object-contain border border-[#D8D2C0] bg-white p-1" />
       )}
-      <div className="flex items-center gap-3">
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={`flex items-center gap-3 border border-dashed px-3 py-2 transition-colors ${
+          dragging ? "border-[#C1440E] bg-black/5" : "border-transparent"
+        }`}
+      >
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -45,6 +74,7 @@ export default function SingleImageUpload({ label, value, onChange, hint }) {
             <X className="w-3 h-3" /> Sacar
           </button>
         )}
+        <span className="text-xs text-[#8B8D8F]">{dragging ? "Soltá acá" : "o arrastrá una foto acá"}</span>
       </div>
       {hint && <p className="text-xs text-[#8B8D8F]">{hint}</p>}
       {error && <p className="text-xs text-[#C1440E]">{error}</p>}

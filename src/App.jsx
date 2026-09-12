@@ -9,6 +9,7 @@ import { useAdminSession } from "./useAdminSession.js";
 import { useSuperAdminSession } from "./useSuperAdminSession.js";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
+import NumberInput from "./NumberInput.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import CatalogAdminPanel from "./CatalogAdminPanel.jsx";
 import SupabaseNotConfiguredNotice from "./SupabaseNotConfiguredNotice.jsx";
@@ -144,7 +145,7 @@ function MotoCard({ moto, whatsappNumber }) {
         </div>
 
         <div className="mt-auto flex items-end justify-between pt-1">
-          <div className="bg-[var(--c-dark)] text-[var(--c-signal)] font-mono text-lg px-3 py-1.5 tabular-nums">
+          <div className="bg-[var(--c-dark)] text-[var(--c-signal)] font-mono text-lg px-3 py-1.5 tabular-nums whitespace-nowrap">
             {formatMoney(moto.precio, moto.moneda)}
           </div>
           <a
@@ -199,7 +200,7 @@ function MotoListRow({ moto, whatsappNumber }) {
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-[#15151A] text-[var(--c-signal)] font-mono text-base px-3 py-1.5 tabular-nums">
+          <div className="bg-[#15151A] text-[var(--c-signal)] font-mono text-base px-3 py-1.5 tabular-nums whitespace-nowrap">
             {formatMoney(moto.precio, moto.moneda)}
           </div>
           <a
@@ -225,6 +226,7 @@ function PedirMotoForm({ whatsappNumber, motos }) {
     marca: "Cualquiera",
     modelo: "",
     presupuesto: "",
+    presupuestoMoneda: "ARS",
     comentario: "",
   });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
@@ -243,7 +245,7 @@ function PedirMotoForm({ whatsappNumber, motos }) {
       form.email && `Email: ${form.email}`,
       !motoElegida && `Marca: ${form.marca}`,
       !motoElegida && form.modelo && `Modelo: ${form.modelo}`,
-      !motoElegida && form.presupuesto && `Presupuesto aprox: ${form.presupuesto}`,
+      !motoElegida && form.presupuesto && `Presupuesto aprox: ${formatMoney(Number(form.presupuesto), form.presupuestoMoneda)}`,
       form.comentario && `Comentario: ${form.comentario}`,
     ].filter(Boolean);
     window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
@@ -283,7 +285,18 @@ function PedirMotoForm({ whatsappNumber, motos }) {
               options={[{ value: "Cualquiera", label: "Cualquiera" }, ...MARCAS.map((m) => ({ value: m, label: m }))]}
             />
             <TextInput label="Modelo" value={form.modelo} onChange={set("modelo")} />
-            <TextInput label="Presupuesto aprox. (opcional)" value={form.presupuesto} onChange={set("presupuesto")} placeholder="US$ 5.000" />
+            <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
+              <NumberInput label="Presupuesto aprox. (opcional)" value={form.presupuesto} onChange={set("presupuesto")} placeholder="5.000" />
+              <FieldSelect
+                label="Moneda"
+                value={form.presupuestoMoneda}
+                onChange={set("presupuestoMoneda")}
+                options={[
+                  { value: "ARS", label: "ARS" },
+                  { value: "USD", label: "USD" },
+                ]}
+              />
+            </div>
           </>
         )}
       </div>
@@ -324,7 +337,7 @@ function VenderMotoForm({ whatsappNumber }) {
       `Marca: ${form.marca}`,
       `Modelo: ${form.modelo}`,
       form.anio && `Año: ${form.anio}`,
-      form.km && `Km: ${form.km}`,
+      form.km && `Km: ${new Intl.NumberFormat("es-AR").format(Number(form.km))}`,
       form.comentario && `Estado / comentarios: ${form.comentario}`,
     ].filter(Boolean);
     window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
@@ -344,7 +357,7 @@ function VenderMotoForm({ whatsappNumber }) {
         <FieldSelect label="Marca de tu moto" value={form.marca} onChange={set("marca")} options={MARCAS.map((m) => ({ value: m, label: m }))} />
         <TextInput label="Modelo" required value={form.modelo} onChange={set("modelo")} />
         <TextInput label="Año" value={form.anio} onChange={set("anio")} />
-        <TextInput label="Km" value={form.km} onChange={set("km")} />
+        <NumberInput label="Km" value={form.km} onChange={set("km")} placeholder="0" />
       </div>
       <label className="flex flex-col gap-1">
         <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Estado / comentarios (opcional)</span>
