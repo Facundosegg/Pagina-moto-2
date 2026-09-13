@@ -696,3 +696,79 @@ colores — cambian de verdad la estructura de la página:
 Así dos clientes con exactamente los mismos colores todavía se ven
 notoriamente distintos entre sí. Si un cliente no tiene `layout`
 cargado, usa "Clásico" por defecto — no se rompe nada.
+
+### Paso 5.10 — Pausar clientes y llevar un mini registro de cobros
+
+Esto agrega, para cada cliente: un interruptor para pausar su sitio
+sin borrar nada, y una sección privada (plata, contacto, notas) que
+**solo vos ves** — nunca se mezcla con los datos que lee el sitio
+público, van en una tabla aparte con sus propios permisos.
+
+**1. Agregá el interruptor de activo/pausado a la tabla `clientes`:**
+
+```sql
+alter table clientes add column if not exists activo boolean not null default true;
+```
+
+**2. Creá la tabla privada de gestión:**
+
+```sql
+create table clientes_gestion (
+  cliente_id uuid primary key references clientes(id) on delete cascade,
+  contacto_nombre text,
+  contacto_telefono text,
+  monto_mensual numeric,
+  moneda_plan text default 'ARS',
+  estado_pago text not null default 'al_dia',
+  proximo_vencimiento date,
+  notas text,
+  updated_at timestamptz not null default now()
+);
+
+alter table clientes_gestion enable row level security;
+
+create policy "Solo superadmin ve la gestión de clientes"
+on clientes_gestion for select
+to authenticated
+using ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+
+create policy "Solo superadmin crea gestión de clientes"
+on clientes_gestion for insert
+to authenticated
+with check ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+
+create policy "Solo superadmin edita gestión de clientes"
+on clientes_gestion for update
+to authenticated
+using ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true )
+with check ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+
+create policy "Solo superadmin borra gestión de clientes"
+on clientes_gestion for delete
+to authenticated
+using ( (auth.jwt() -> 'user_metadata' ->> 'is_superadmin')::boolean is true );
+```
+
+A propósito, esta tabla **no tiene ninguna política de lectura
+pública** — a diferencia de `clientes` (que el sitio necesita leer
+para mostrarse), acá ni siquiera un visitante que abra las
+herramientas de desarrollador del navegador podría ver esta
+información. Solo vos, logueado como superadmin.
+
+**Cómo se usa:** al editar cualquier cliente desde `?panel=plataforma`,
+ahora aparece un recuadro **"Gestión del cliente — privado"** con:
+
+- Un check de **"Sitio activo"**. Si lo destildás y guardás, ese
+  cliente pasa a mostrar un aviso de "Sitio pausado" a cualquiera que
+  entre — sin borrar ni una moto ni un dato. Volvés a tildarlo y el
+  sitio vuelve a funcionar exactamente como estaba.
+- **Estado de pago** (Al día / Atrasado / Pausado por falta de pago) —
+  es solo una etiqueta para vos, no pausa el sitio automáticamente
+  (eso lo hace únicamente el check de "Sitio activo").
+- **Próximo vencimiento**, **monto mensual** y **moneda**.
+- **Nombre y teléfono de contacto**, y un campo de **notas** libres.
+
+En la lista de clientes, cada tarjeta ahora muestra una etiqueta roja
+"Pausado" si el sitio está desactivado, una etiqueta amarilla "Pago
+atrasado" si marcaste ese estado, y el monto mensual si lo cargaste —
+para ver todo de un vistazo sin entrar a cada cliente.

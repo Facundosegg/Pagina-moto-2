@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, ExternalLink, Link2, Loader2 } from "lucide-react";
-import { listClientes, insertCliente, updateClienteById, deleteClienteById } from "./superadminApi.js";
+import { LogOut, Plus, Pencil, Trash2, ArrowLeft, Save, ExternalLink, Link2, Loader2, Lock } from "lucide-react";
+import { listClientes, insertCliente, updateClienteById, deleteClienteById, getGestion, listGestion, upsertGestion } from "./superadminApi.js";
 import { connectDomain } from "./platformApi.js";
 import ColorField from "./ColorField.jsx";
 import SingleImageUpload from "./SingleImageUpload.jsx";
 import TextInput from "./TextInput.jsx";
+import NumberInput from "./NumberInput.jsx";
+import FieldSelect from "./FieldSelect.jsx";
 import AdminUsersManager from "./AdminUsersManager.jsx";
+import { formatMoney } from "./format.js";
 
 function blankForm() {
   return {
     slug: "",
     dominio: "",
+    activo: true,
     nombre_negocio: "",
     tagline: "",
     hero_titulo: "",
@@ -34,12 +38,26 @@ function blankForm() {
   };
 }
 
+function blankGestion() {
+  return {
+    contacto_nombre: "",
+    contacto_telefono: "",
+    estado_pago: "al_dia",
+    proximo_vencimiento: "",
+    monto_mensual: "",
+    moneda_plan: "ARS",
+    notas: "",
+  };
+}
+
 export default function SuperAdminPanel({ onLogout }) {
   const [clientes, setClientes] = useState([]);
+  const [gestionMap, setGestionMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("lista"); // "lista" | "editar" | "nuevo"
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(blankForm());
+  const [gestion, setGestionState] = useState(blankGestion());
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -50,11 +68,18 @@ export default function SuperAdminPanel({ onLogout }) {
   const [domainVerification, setDomainVerification] = useState(null);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  const setGestion = (k) => (v) => setGestionState((g) => ({ ...g, [k]: v }));
 
   async function reload() {
     setLoading(true);
     try {
-      setClientes(await listClientes());
+      const [clientesData, gestionRows] = await Promise.all([listClientes(), listGestion()]);
+      setClientes(clientesData);
+      const map = {};
+      gestionRows.forEach((g) => {
+        map[g.cliente_id] = g;
+      });
+      setGestionMap(map);
     } catch (err) {
       setError(err.message || "No se pudo cargar la lista de clientes.");
     } finally {
@@ -68,6 +93,7 @@ export default function SuperAdminPanel({ onLogout }) {
 
   function startNew() {
     setForm(blankForm());
+    setGestionState(blankGestion());
     setEditingId(null);
     setError("");
     setNuevoCreado(null);
@@ -77,10 +103,11 @@ export default function SuperAdminPanel({ onLogout }) {
     setView("nuevo");
   }
 
-  function startEdit(cliente) {
+  async function startEdit(cliente) {
     setForm({
       slug: cliente.slug || "",
       dominio: cliente.dominio || "",
+      activo: cliente.activo !== false,
       nombre_negocio: cliente.nombre_negocio || "",
       tagline: cliente.tagline || "",
       hero_titulo: cliente.hero_titulo || "",
@@ -108,6 +135,19 @@ export default function SuperAdminPanel({ onLogout }) {
     setDomainMessage("");
     setDomainVerification(null);
     setView("editar");
+
+    const yaConocida = gestionMap[cliente.id];
+    setGestionState(
+      yaConocida
+        ? { ...blankGestion(), ...yaConocida, monto_mensual: yaConocida.monto_mensual != null ? String(yaConocida.monto_mensual) : "" }
+        : blankGestion()
+    );
+    try {
+      const g = await getGestion(cliente.id);
+      if (g) setGestionState({ ...blankGestion(), ...g, monto_mensual: g.monto_mensual != null ? String(g.monto_mensual) : "" });
+    } catch {
+      // si falla, seguimos con lo que ya teníamos (o el formulario en blanco)
+    }
   }
 
   async function handleSubmit(e) {
@@ -118,13 +158,24 @@ export default function SuperAdminPanel({ onLogout }) {
     }
     setSaving(true);
     setError("");
+    const gestionPayload = {
+      contacto_nombre: gestion.contacto_nombre || null,
+      contacto_telefono: gestion.contacto_telefono || null,
+      estado_pago: gestion.estado_pago || "al_dia",
+      proximo_vencimiento: gestion.proximo_vencimiento || null,
+      monto_mensual: gestion.monto_mensual ? Number(gestion.monto_mensual) : null,
+      moneda_plan: gestion.moneda_plan || "ARS",
+      notas: gestion.notas || null,
+    };
     try {
       if (view === "nuevo") {
         const created = await insertCliente(form);
+        await upsertGestion(created.id, gestionPayload);
         await reload();
         setNuevoCreado(created);
       } else {
         await updateClienteById(editingId, form);
+        await upsertGestion(editingId, gestionPayload);
         await reload();
         setView("lista");
       }
@@ -268,6 +319,62 @@ export default function SuperAdminPanel({ onLogout }) {
           hint="Foto ancha de fondo en la sección de arriba de todo."
         />
       </div>
+
+      <div className="border border-[#D8D2C0] bg-black/5 p-4 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 text-[#8B8D8F]" />
+          <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">
+            Gestión del cliente — privado, no lo ve nadie más
+          </span>
+        </div>
+
+        <label className="flex items-center gap-2 cursor-pointer w-fit">
+          <input type="checkbox" checked={form.activo} onChange={(e) => set("activo")(e.target.checked)} className="w-4 h-4" />
+          <span className="text-sm text-[#17171C]">Sitio activo</span>
+        </label>
+        {!form.activo && (
+          <p className="text-xs text-[#C1440E]">
+            El sitio de este cliente va a dejar de mostrarse (los visitantes ven un aviso de "pausado") apenas
+            guardes. El catálogo y todos sus datos quedan intactos para cuando lo reactives.
+          </p>
+        )}
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <TextInput label="Nombre de contacto" value={gestion.contacto_nombre} onChange={setGestion("contacto_nombre")} />
+          <TextInput label="Teléfono de contacto" value={gestion.contacto_telefono} onChange={setGestion("contacto_telefono")} />
+          <FieldSelect
+            label="Estado de pago"
+            value={gestion.estado_pago}
+            onChange={setGestion("estado_pago")}
+            options={[
+              { value: "al_dia", label: "Al día" },
+              { value: "atrasado", label: "Atrasado" },
+              { value: "pausado", label: "Pausado por falta de pago" },
+            ]}
+          />
+          <TextInput label="Próximo vencimiento" type="date" value={gestion.proximo_vencimiento} onChange={setGestion("proximo_vencimiento")} />
+          <NumberInput label="Monto mensual" value={gestion.monto_mensual} onChange={setGestion("monto_mensual")} placeholder="15.000" />
+          <FieldSelect
+            label="Moneda"
+            value={gestion.moneda_plan}
+            onChange={setGestion("moneda_plan")}
+            options={[
+              { value: "ARS", label: "ARS" },
+              { value: "USD", label: "USD" },
+            ]}
+          />
+        </div>
+
+        <label className="flex flex-col gap-1">
+          <span className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">Notas</span>
+          <textarea
+            value={gestion.notas}
+            onChange={(e) => setGestion("notas")(e.target.value)}
+            rows={3}
+            className="bg-white border border-[#D8D2C0] text-[#17171C] text-sm px-3 py-2 focus:outline-none focus:border-[#C1440E] resize-none"
+          />
+        </label>
+      </div>
     </>
   );
 
@@ -369,7 +476,9 @@ export default function SuperAdminPanel({ onLogout }) {
           <p className="text-sm text-[#8B8D8F]">Todavía no hay clientes cargados.</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {clientes.map((c) => (
+            {clientes.map((c) => {
+              const g = gestionMap[c.id];
+              return (
               <div key={c.id} className="bg-[#EDE8DC] p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -382,6 +491,21 @@ export default function SuperAdminPanel({ onLogout }) {
                     ))}
                   </div>
                 </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {c.activo === false && (
+                    <span className="font-mono text-[9px] tracking-widest uppercase bg-[#C1440E] text-white px-2 py-0.5">Pausado</span>
+                  )}
+                  {c.activo !== false && g?.estado_pago === "atrasado" && (
+                    <span className="font-mono text-[9px] tracking-widest uppercase bg-[#F5B700] text-[#15151A] px-2 py-0.5">
+                      Pago atrasado
+                    </span>
+                  )}
+                  {g?.monto_mensual != null && (
+                    <span className="font-mono text-[10px] text-[#8B8D8F]">{formatMoney(g.monto_mensual, g.moneda_plan)}/mes</span>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => startEdit(c)}
@@ -419,7 +543,8 @@ export default function SuperAdminPanel({ onLogout }) {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

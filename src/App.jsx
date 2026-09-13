@@ -14,6 +14,7 @@ import AdminLogin from "./AdminLogin.jsx";
 import CatalogAdminPanel from "./CatalogAdminPanel.jsx";
 import SupabaseNotConfiguredNotice from "./SupabaseNotConfiguredNotice.jsx";
 import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
+import ClientePausadoNotice from "./ClientePausadoNotice.jsx";
 import SuperAdminLogin from "./SuperAdminLogin.jsx";
 import SuperAdminPanel from "./SuperAdminPanel.jsx";
 
@@ -568,6 +569,7 @@ function ClienteSite() {
   }, []);
 
   const showClienteNoEncontrado = isSupabaseConfigured && !clienteLoading && !cliente;
+  const showClientePausado = !clienteLoading && cliente && cliente.activo === false;
 
   // Carga del catálogo, ya sabiendo a qué cliente pertenece este sitio.
   useEffect(() => {
@@ -663,6 +665,10 @@ function ClienteSite() {
 
   if (showClienteNoEncontrado) {
     return <ClienteNoEncontradoNotice />;
+  }
+
+  if (showClientePausado) {
+    return <ClientePausadoNotice />;
   }
 
   return (
