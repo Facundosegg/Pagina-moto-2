@@ -772,3 +772,37 @@ En la lista de clientes, cada tarjeta ahora muestra una etiqueta roja
 "Pausado" si el sitio está desactivado, una etiqueta amarilla "Pago
 atrasado" si marcaste ese estado, y el monto mensual si lo cargaste —
 para ver todo de un vistazo sin entrar a cada cliente.
+
+### Paso 5.11 — Vista previa linda al compartir el link (WhatsApp, Facebook, etc.)
+
+Cuando alguien pega el link de un sitio en un chat de WhatsApp, la
+app arma una tarjetita con título, descripción y una foto — pero esa
+tarjeta la genera WhatsApp leyendo el HTML del sitio **sin ejecutar
+nada de JavaScript**. Como este sitio arma todo su contenido con
+React (JavaScript), sin este paso WhatsApp vería el sitio "vacío" y
+mostraría un link pelado, sin imagen ni datos.
+
+**Esto no necesita ninguna clave nueva** — usa las mismas
+`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` que ya tenés
+cargadas, así que si ya tenías el sitio funcionando, con subir el
+código alcanza.
+
+1. Subí el código actualizado a GitHub como siempre (esta vez incluye
+   un archivo `vercel.json` nuevo en la raíz, y `api/render.js` — se
+   suben igual que todo lo demás). Esperá el redeploy.
+2. Para probar cómo va a quedar la vista previa de un link, sin
+   depender de que WhatsApp actualice su caché (WhatsApp guarda la
+   vista previa de un link la primera vez que alguien lo comparte, y
+   tarda en "refrescarla"), usá una herramienta de prueba como
+   **https://www.opengraph.xyz/** — pegás la URL de un cliente y te
+   muestra exactamente lo que va a ver WhatsApp.
+3. La foto que se usa para la vista previa es la de **portada** del
+   cliente (o su logo, si no tiene portada cargada). Si un cliente no
+   tiene ninguna de las dos, la tarjeta sale sin foto, solo con texto
+   — igual funciona, pero se ve mejor con foto.
+
+Si en algún momento cambiás el nombre, la frase corta o la foto de
+portada de un cliente, la vista previa se actualiza sola la próxima
+vez que alguien comparta el link (queda en caché 5 minutos como
+máximo del lado de Vercel; del lado de WhatsApp puede tardar más en
+refrescarse, eso ya no lo controla el sitio).
