@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG, MARCAS } from "./data.js";
 import { formatMoney, waLink } from "./format.js";
 import { fetchMotos, subscribeToMotos } from "./motosApi.js";
 import { fetchClienteActual, applyTheme } from "./clienteApi.js";
+import { logEvento } from "./statsApi.js";
 import { isSupabaseConfigured } from "./supabaseClient.js";
 import { useAdminSession } from "./useAdminSession.js";
 import { useSuperAdminSession } from "./useSuperAdminSession.js";
@@ -17,6 +18,7 @@ import ClienteNoEncontradoNotice from "./ClienteNoEncontradoNotice.jsx";
 import ClientePausadoNotice from "./ClientePausadoNotice.jsx";
 import SuperAdminLogin from "./SuperAdminLogin.jsx";
 import SuperAdminPanel from "./SuperAdminPanel.jsx";
+import ResetPasswordView from "./ResetPassword.jsx";
 
 const PAGE_SIZE = 12;
 
@@ -64,7 +66,7 @@ function PlaceholderArt({ marca, estado }) {
   );
 }
 
-function MotoCard({ moto, whatsappNumber, onAbrirDetalle }) {
+function MotoCard({ moto, whatsappNumber, clienteId, onAbrirDetalle }) {
   const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
@@ -157,7 +159,10 @@ function MotoCard({ moto, whatsappNumber, onAbrirDetalle }) {
             href={waLink(whatsappNumber, msg)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              logEvento(clienteId, moto.id, "consulta");
+            }}
             className="inline-flex items-center gap-1.5 bg-[var(--c-ink)] text-[var(--c-paper2)] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Consultar
@@ -168,7 +173,7 @@ function MotoCard({ moto, whatsappNumber, onAbrirDetalle }) {
   );
 }
 
-function MotoListRow({ moto, whatsappNumber, onAbrirDetalle }) {
+function MotoListRow({ moto, whatsappNumber, clienteId, onAbrirDetalle }) {
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
   const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
@@ -216,7 +221,10 @@ function MotoListRow({ moto, whatsappNumber, onAbrirDetalle }) {
             href={waLink(whatsappNumber, msg)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              logEvento(clienteId, moto.id, "consulta");
+            }}
             className="inline-flex items-center gap-1.5 bg-[#17171C] text-[#F4F0E6] text-sm px-3 py-2 hover:bg-[var(--c-rust)] transition-colors whitespace-nowrap"
           >
             <MessageCircle className="w-4 h-4" /> Consultar
@@ -227,11 +235,16 @@ function MotoListRow({ moto, whatsappNumber, onAbrirDetalle }) {
   );
 }
 
-function MotoDetalleModal({ moto, whatsappNumber, onClose }) {
+function MotoDetalleModal({ moto, whatsappNumber, clienteId, onClose }) {
   const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
   const fotos = moto.fotos && moto.fotos.length > 0 ? moto.fotos : moto.image_url ? [moto.image_url] : [];
   const msg = `Hola! Estoy interesado en la ${moto.marca} ${moto.modelo} ${moto.anio} (${formatMoney(moto.precio, moto.moneda)}) del catálogo.`;
+
+  useEffect(() => {
+    logEvento(clienteId, moto.id, "vista");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moto.id]);
 
   function go(delta) {
     setImgError(false);
@@ -357,6 +370,7 @@ function MotoDetalleModal({ moto, whatsappNumber, onClose }) {
               href={waLink(whatsappNumber, msg)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => logEvento(clienteId, moto.id, "consulta")}
               className="inline-flex items-center gap-2 bg-[var(--c-ink)] text-[var(--c-paper2)] font-medium px-5 py-2.5 hover:bg-[var(--c-rust)] transition-colors"
             >
               <MessageCircle className="w-4 h-4" /> Consultar por esta moto
@@ -368,7 +382,7 @@ function MotoDetalleModal({ moto, whatsappNumber, onClose }) {
   );
 }
 
-function PedirMotoForm({ whatsappNumber, motos }) {
+function PedirMotoForm({ whatsappNumber, motos, clienteId }) {
   const [form, setForm] = useState({
     nombre: "",
     whatsapp: "",
@@ -399,6 +413,7 @@ function PedirMotoForm({ whatsappNumber, motos }) {
       !motoElegida && form.presupuesto && `Presupuesto aprox: ${formatMoney(Number(form.presupuesto), form.presupuestoMoneda)}`,
       form.comentario && `Comentario: ${form.comentario}`,
     ].filter(Boolean);
+    if (motoElegida) logEvento(clienteId, motoElegida.id, "consulta");
     window.open(waLink(whatsappNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
   }
 
@@ -698,7 +713,7 @@ function ClienteSite() {
         />
       )}
       {motoDetalle && (
-        <MotoDetalleModal moto={motoDetalle} whatsappNumber={config.whatsappNumber} onClose={() => setMotoDetalle(null)} />
+        <MotoDetalleModal moto={motoDetalle} whatsappNumber={config.whatsappNumber} clienteId={cliente?.id} onClose={() => setMotoDetalle(null)} />
       )}
 
       {/* HEADER */}
@@ -866,13 +881,13 @@ function ClienteSite() {
         ) : config.layout === "lista" ? (
           <div className="flex flex-col gap-4">
             {mostrar.map((moto) => (
-              <MotoListRow key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} onAbrirDetalle={setMotoDetalle} />
+              <MotoListRow key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} clienteId={cliente?.id} onAbrirDetalle={setMotoDetalle} />
             ))}
           </div>
         ) : (
           <div className={`grid sm:grid-cols-2 gap-5 ${config.layout === "centrado" ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
             {mostrar.map((moto) => (
-              <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} onAbrirDetalle={setMotoDetalle} />
+              <MotoCard key={moto.id} moto={moto} whatsappNumber={config.whatsappNumber} clienteId={cliente?.id} onAbrirDetalle={setMotoDetalle} />
             ))}
           </div>
         )}
@@ -896,7 +911,7 @@ function ClienteSite() {
 
       {/* FORMULARIOS */}
       <section id="pedir" className="max-w-6xl mx-auto px-5 py-12">
-        <PedirMotoForm whatsappNumber={config.whatsappNumber} motos={motos} />
+        <PedirMotoForm whatsappNumber={config.whatsappNumber} motos={motos} clienteId={cliente?.id} />
       </section>
       <section id="vender" className="max-w-6xl mx-auto px-5 pb-12">
         <VenderMotoForm whatsappNumber={config.whatsappNumber} />
@@ -1000,9 +1015,11 @@ function SuperAdminRoot() {
 }
 
 export default function App() {
-  const isPlatformPanel =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("panel") === "plataforma";
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const isPlatformPanel = params?.get("panel") === "plataforma";
+  const isRecoverView = params?.get("recover") === "1";
 
   if (isPlatformPanel) return <SuperAdminRoot />;
+  if (isRecoverView) return <ResetPasswordView />;
   return <ClienteSite />;
 }

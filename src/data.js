@@ -11,6 +11,17 @@
    ============================================================================== */
 
 // ------------------------------------------------------------------------------
+// RESET_PASSWORD_URL — a dónde manda Supabase el link de "recuperar
+// contraseña" que reciben por email. Como hay un solo proyecto para
+// todos los clientes, alcanza con UN dominio fijo (cualquiera de los
+// tuyos) — el paso de "elegir contraseña nueva" es igual sin importar
+// de qué cliente sea el usuario. Cambiá esto por tu dominio real, y
+// agregalo una sola vez a la lista de "Redirect URLs" de Supabase
+// (ver README, sección "Recuperar contraseña").
+// ------------------------------------------------------------------------------
+export const RESET_PASSWORD_URL = "https://pagina-moto.vercel.app/?recover=1";
+
+// ------------------------------------------------------------------------------
 // DEFAULT_CONFIG — Datos de contacto y del negocio, SOLO para el modo demo.
 // ------------------------------------------------------------------------------
 export const DEFAULT_CONFIG = {

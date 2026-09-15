@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { PackagePlus, X, Plus, Save, Pencil, Trash2, LogOut } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { PackagePlus, X, Plus, Save, Pencil, Trash2, LogOut, BarChart3, Eye, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import FieldSelect from "./FieldSelect.jsx";
 import TextInput from "./TextInput.jsx";
 import NumberInput from "./NumberInput.jsx";
@@ -7,6 +7,7 @@ import PhotoUpload from "./PhotoUpload.jsx";
 import { MARCAS } from "./data.js";
 import { formatMoney } from "./format.js";
 import { insertMoto, updateMotoById, deleteMotoById } from "./motosApi.js";
+import { fetchStatsForCliente } from "./statsApi.js";
 
 function blankMotoForm() {
   return {
@@ -30,6 +31,25 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const scrollRef = useRef(null);
+
+  const [stats, setStats] = useState({});
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [showStats, setShowStats] = useState(false);
+
+  useEffect(() => {
+    if (!clienteId) {
+      setStatsLoading(false);
+      return;
+    }
+    let active = true;
+    fetchStatsForCliente(clienteId)
+      .then((data) => active && setStats(data))
+      .catch(() => {})
+      .finally(() => active && setStatsLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [clienteId]);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -181,6 +201,61 @@ export default function CatalogAdminPanel({ motos, setMotos, clienteId, onClose,
               )}
             </div>
           </form>
+
+          <div className="p-5 border-b border-[#D8D2C0]">
+            <button
+              onClick={() => setShowStats((v) => !v)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <span className="inline-flex items-center gap-2 font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase">
+                <BarChart3 className="w-4 h-4" /> Estadísticas — qué motos generan más interés
+              </span>
+              {showStats ? <ChevronUp className="w-4 h-4 text-[#8B8D8F]" /> : <ChevronDown className="w-4 h-4 text-[#8B8D8F]" />}
+            </button>
+
+            {showStats && (
+              <div className="mt-3">
+                {statsLoading ? (
+                  <p className="text-sm text-[#8B8D8F]">Cargando estadísticas...</p>
+                ) : sorted.length === 0 ? (
+                  <p className="text-sm text-[#8B8D8F]">Todavía no hay motos cargadas.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-[#8B8D8F] mb-3">
+                      "Vistas" cuenta cuántas veces se abrió la ficha grande de esa moto. "Consultas" cuenta cuántas
+                      veces alguien tocó "Consultar" por ella. Ordenado de la más consultada a la menos.
+                    </p>
+                    <ul className="flex flex-col divide-y divide-[#D8D2C0]">
+                      {[...sorted]
+                        .sort((a, b) => {
+                          const sb = stats[b.id] || { vistas: 0, consultas: 0 };
+                          const sa = stats[a.id] || { vistas: 0, consultas: 0 };
+                          return sb.consultas - sa.consultas || sb.vistas - sa.vistas;
+                        })
+                        .map((m) => {
+                          const s = stats[m.id] || { vistas: 0, consultas: 0 };
+                          return (
+                            <li key={m.id} className="py-2 flex items-center justify-between gap-3">
+                              <p className="text-sm text-[var(--c-ink)] truncate min-w-0">
+                                <span className="font-mono text-[#8B8D8F]">{m.marca}</span> {m.modelo}
+                              </p>
+                              <div className="flex items-center gap-4 shrink-0 font-mono text-xs text-[#5B5852]">
+                                <span className="inline-flex items-center gap-1" title="Vistas de la ficha grande">
+                                  <Eye className="w-3.5 h-3.5" /> {s.vistas}
+                                </span>
+                                <span className="inline-flex items-center gap-1" title="Veces que tocaron Consultar">
+                                  <MessageCircle className="w-3.5 h-3.5" /> {s.consultas}
+                                </span>
+                              </div>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="p-5">
             <p className="font-mono text-[10px] tracking-widest text-[#8B8D8F] uppercase mb-3">
